@@ -147,3 +147,9 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+data/raw/
+dist/
+__pycache__/
+.venv/
+.ipynb_checkpoints/
