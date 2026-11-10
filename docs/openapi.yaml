@@ -6,8 +6,9 @@ info:
     Kontrak API macymoo (UMKM macyourmoo). Satu-satunya sumber untuk semua path.
     Hanya diubah di macymoo-fs/docs/openapi.yaml; setiap perubahan dikabari ke FS, AI, dan DS.
 
-    STATUS: DRAF untuk disepakati. Bagian yang ditandai "USULAN" belum disepakati
-    dengan path terkait (AI untuk /v1/..., Darnell untuk path publik).
+    STATUS: DRAF. Daftar path mengikuti macymoo_Keputusan_Final.md bagian 9.8 dan 9.6 (KF
+    berlaku jika bertentangan). Bagian yang ditandai "USULAN" tidak ada di KF dan belum
+    disepakati tim.
 
     Isi draf ini:
     - Bagian admin (Express, /api/v1/admin/...): ditulis Rama.
@@ -49,7 +50,7 @@ paths:
   # ===========================================================================
 
   # ---------------------------------------------------------------- Auth
-  /admin/login:
+  /auth/login:
     post:
       tags: [Auth]
       summary: Login admin (JWT di httpOnly cookie)
@@ -74,7 +75,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/RateLimited' }
 
-  /admin/logout:
+  /auth/logout:
     post:
       tags: [Auth]
       summary: Logout admin
@@ -82,7 +83,7 @@ paths:
         '204': { description: Cookie dihapus }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
-  /admin/me:
+  /auth/me:
     get:
       tags: [Auth]
       summary: Admin yang sedang login
@@ -103,7 +104,7 @@ paths:
         - { name: q, in: query, description: "Cari kode pesanan, nama, atau nomor HP", schema: { type: string } }
         - { name: status, in: query, schema: { $ref: '#/components/schemas/OrderStatus' } }
         - { name: pay_status, in: query, schema: { $ref: '#/components/schemas/PayStatus' } }
-        - { name: delivery_date, in: query, description: Pesanan yang punya pengiriman pada tanggal ini, schema: { type: string, format: date } }
+        - { name: date, in: query, description: Pesanan yang punya pengiriman pada tanggal ini, schema: { type: string, format: date } }
         - { name: overdue, in: query, description: true = hanya yang lewat batas bayar, schema: { type: boolean } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
         - { name: page_size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
@@ -158,7 +159,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
 
   /admin/orders/{id}/confirm:
-    post:
+    patch:
       tags: [Pesanan]
       summary: Konfirmasi pesanan
       description: |
@@ -371,32 +372,17 @@ paths:
         '409': { $ref: '#/components/responses/InvalidTransition' }
 
   # ------------------------------------------------------------- Invoice
-  /admin/orders/{id}/invoices:
-    parameters:
-      - { $ref: '#/components/parameters/OrderId' }
-    post:
-      tags: [Invoice]
-      summary: Terbitkan invoice atau revisi
-      description: |
-        Nomor INV/YYYYMMDD/MYM/NNN, urutan NNN reset tiap hari (mulai 001).
-        Pemanggilan berikutnya untuk pesanan yang sama menghasilkan revisi (-v2, -v3).
-      responses:
-        '201':
-          description: Diterbitkan
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Invoice' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/InvalidTransition' }
-
-  /admin/invoices/{id}/pdf:
+  /admin/orders/{id}/invoice.pdf:
     get:
       tags: [Invoice]
-      summary: Unduh PDF invoice (dibuat saat diminta)
-      description: Isi PDF sama dengan data; ongkir per pengiriman.
+      summary: Invoice PDF (dibuat saat diminta)
+      description: |
+        Sesuai KF 9.8. Permintaan pertama untuk satu pesanan menerbitkan invoice revisi 1
+        dengan nomor INV/YYYYMMDD/MYM/NNN (urutan reset tiap hari, mulai 001). Permintaan
+        berikutnya mengembalikan revisi terbaru. Isi PDF sama dengan data; ongkir per pengiriman.
+        Total final terbit setelah Nabila konfirmasi, jadi pesanan Menunggu Konfirmasi dijawab 409.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { $ref: '#/components/parameters/OrderId' }
       responses:
         '200':
           description: PDF
@@ -405,6 +391,27 @@ paths:
               schema: { type: string, format: binary }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /admin/orders/{id}/invoice/revise:
+    post:
+      tags: [Invoice]
+      summary: Terbitkan revisi invoice (USULAN, tidak ada di KF 9.8)
+      description: |
+        KF menyebut revisi berakhiran -v2 tetapi tidak menyebut endpoint pemicunya.
+        Usulan: revisi dibuat eksplisit lewat endpoint ini, mis. setelah diskon atau jadwal berubah.
+        Perlu disepakati tim.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+      responses:
+        '201':
+          description: Revisi diterbitkan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invoice' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
 
   # -------------------------------------------------------- Daftar masak
   /admin/kitchen:
@@ -522,12 +529,13 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
-  /admin/menu-options/{id}:
+  /admin/menus/{id}/options/{option_id}:
     patch:
       tags: [Menu]
       summary: Ubah nama atau harga tambahan satu opsi
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: option_id, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
@@ -717,32 +725,12 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ------------------------------------------------------------ Pelanggan
-  /admin/customers/search:
-    get:
-      tags: [Pelanggan]
-      summary: Cari pelanggan lewat nomor HP (untuk Anonimkan)
-      parameters:
-        - { name: phone, in: query, required: true, schema: { type: string } }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  order_count: { type: integer }
-                  order_codes:
-                    type: array
-                    items: { type: string }
-        '400': { $ref: '#/components/responses/ValidationError' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-
   /admin/customers/anonymize:
     post:
       tags: [Pelanggan]
       summary: Anonimkan data satu nomor HP (tambahan)
       description: |
+        Nabila mencari nomor HP lewat GET /admin/orders?q=, lalu menekan Anonimkan.
         Nama, HP, dan alamat dihapus di semua pesanan nomor itu. Menu dan total tetap untuk rekap.
         Tidak bisa dibatalkan.
       requestBody:
@@ -776,8 +764,7 @@ paths:
       parameters:
         - { name: from, in: query, required: true, schema: { type: string, format: date } }
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
-        - { name: granularity, in: query, schema: { type: string, enum: [daily, weekly], default: daily } }
-        - { name: format, in: query, description: csv untuk unduh, schema: { type: string, enum: [json, csv], default: json } }
+        - { name: period, in: query, schema: { type: string, enum: [daily, weekly], default: daily } }
       responses:
         '200':
           description: OK
@@ -786,8 +773,24 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/RecapRow' }
-            text/csv:
-              schema: { type: string }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /admin/recap/export.xlsx:
+    get:
+      tags: [Rekap]
+      summary: Unduh rekap Excel (tambahan)
+      description: Isi sama dengan /admin/recap; tanpa data pribadi.
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: period, in: query, schema: { type: string, enum: [daily, weekly], default: daily } }
+      responses:
+        '200':
+          description: Berkas Excel
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
@@ -818,10 +821,11 @@ paths:
       tags: [Internal FastAPI]
       summary: Beri label pada catatan pesanan (MooLabel)
       description: |
-        USULAN, disepakati dengan AI. Multi-label: satu catatan bisa berisi beberapa permintaan.
-        Catatan kosong menghasilkan labels []. Daftar label final ada di
-        macymoo-ai/app/moolabel/labels.py. Pertentangan catatan dengan opsi
-        ditandai aturan di backend, bukan oleh model.
+        Format sesuai KF bagian 9.6. Catatan kosong tidak dikirim ke model (disaring Express).
+        Multi-label: satu catatan bisa berisi beberapa permintaan. Nama label BELUM FINAL;
+        daftar final disepakati DS dan AI bersama Nabila di minggu 1, dan isi scores mengikuti daftar itu.
+        Pertentangan catatan dengan opsi ditandai aturan di backend (noteRules.js), bukan oleh model.
+        Bila layanan ini gagal, Express tetap menyimpan dan menampilkan catatan asli tanpa label.
       servers:
         - url: /
           description: FastAPI (macymoo-ai)
@@ -833,9 +837,20 @@ paths:
           application/json:
             schema:
               type: object
-              required: [note]
+              required: [items]
               properties:
-                note: { type: string, maxLength: 500 }
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [order_item_id, note]
+                    properties:
+                      order_item_id: { type: integer }
+                      note: { type: string, minLength: 1 }
+            example:
+              items:
+                - { order_item_id: 123, note: "saya alergi kacang, sausnya pisah" }
       responses:
         '200':
           description: OK
@@ -843,17 +858,29 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [labels]
+                required: [model_version, items]
                 properties:
-                  labels:
+                  model_version: { type: string, example: linsvm-v1 }
+                  items:
                     type: array
                     items:
                       type: object
-                      required: [label]
+                      required: [order_item_id, labels]
                       properties:
-                        label: { type: string }
-                        score: { type: number, minimum: 0, maximum: 1 }
-                  model_version: { type: string, example: moolabel-linsvm-v1 }
+                        order_item_id: { type: integer }
+                        labels:
+                          type: array
+                          items: { type: string }
+                        scores:
+                          type: object
+                          description: Skor per label; kuncinya mengikuti daftar label final.
+                          additionalProperties: { type: number, minimum: 0, maximum: 1 }
+              example:
+                model_version: linsvm-v1
+                items:
+                  - order_item_id: 123
+                    labels: [alergi, saus_terpisah]
+                    scores: { saus_terpisah: 0.91, alergi: 0.87, kurangi_bahan: 0.08, kemasan: 0.03 }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
@@ -862,7 +889,7 @@ paths:
       tags: [Internal FastAPI]
       summary: Tanya MooBot (FAQ pembeli)
       description: |
-        USULAN, disepakati dengan AI. Menu dan harga diambil dari database oleh Express
+        Sesuai KF 9.8. Menu, harga, dan aturan diambil dari database oleh Express
         dan dikirim sebagai context, bukan dari ingatan model. MooBot tanpa akses data
         pesanan dan menolak topik di luar usaha. Express menerapkan rate limit dan batas
         panjang pesan; bila layanan gagal, Express mengembalikan 503 dengan pesan jelas.
@@ -882,7 +909,11 @@ paths:
                 message: { type: string, maxLength: 500 }
                 context:
                   type: object
+                  description: Menu dan aturan dari database, dikirim Express.
                   properties:
+                    rules:
+                      type: array
+                      items: { type: string }
                     menus:
                       type: array
                       items:
@@ -903,7 +934,6 @@ paths:
                 required: [reply]
                 properties:
                   reply: { type: string }
-                  refused: { type: boolean, description: true bila pertanyaan di luar konteks }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
