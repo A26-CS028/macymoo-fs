@@ -1,0 +1,1270 @@
+openapi: 3.0.3
+info:
+  title: macymoo API
+  version: 0.1.0-draft
+  description: |
+    Kontrak API macymoo (UMKM macyourmoo). Satu-satunya sumber untuk semua path.
+    Hanya diubah di macymoo-fs/docs/openapi.yaml; setiap perubahan dikabari ke FS, AI, dan DS.
+
+    STATUS: DRAF untuk disepakati. Bagian yang ditandai "USULAN" belum disepakati
+    dengan path terkait (AI untuk /v1/..., Darnell untuk path publik).
+
+    Isi draf ini:
+    - Bagian admin (Express, /api/v1/admin/...): ditulis Rama.
+    - Bagian internal FastAPI (/v1/...): ditulis Rama, format disepakati dengan AI.
+    - Bagian publik (/api/v1/menus, /orders, dll.): ditulis Darnell, lihat penanda di bawah.
+
+    Aturan umum:
+    - Semua nilai uang adalah bilangan bulat rupiah (contoh 107000), sama dengan kolom INTEGER di database.
+      Harga dan total dihitung server; nilai dari browser diabaikan.
+    - Harga disalin saat pesan: unit_price (harga dasar item) dan extra_price (harga tambahan opsi).
+      Total item = qty * (unit_price + jumlah extra_price opsi). Ongkir ada per pengiriman.
+    - Nilai teks yang dibatasi mengikuti CHECK di backend/migrations/001_init.sql.
+    - Tanggal format YYYY-MM-DD, zona Asia/Jakarta. Waktu format ISO 8601.
+    - Semua error memakai format Error di bawah.
+
+servers:
+  - url: /api/v1
+    description: Express (backend FS)
+
+tags:
+  - name: Auth
+  - name: Pesanan
+  - name: Pengiriman
+  - name: Pembayaran
+  - name: Invoice
+  - name: Daftar masak
+  - name: Menu
+  - name: Pengaturan
+  - name: Tanggal tutup
+  - name: Review
+  - name: Pelanggan
+  - name: Rekap
+  - name: Internal FastAPI
+
+paths:
+  # ===========================================================================
+  # BAGIAN PUBLIK (Darnell): path /menus, /closed-dates, /orders, /orders/{token},
+  # /reviews, /moobot ditambahkan di sini lewat PR tersendiri.
+  # ===========================================================================
+
+  # ---------------------------------------------------------------- Auth
+  /admin/login:
+    post:
+      tags: [Auth]
+      summary: Login admin (JWT di httpOnly cookie)
+      description: Rate limit login berlaku (disimpan di database). Tidak ada endpoint daftar admin.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Berhasil. Cookie JWT (httpOnly, SameSite) dipasang.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminUser' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /admin/logout:
+    post:
+      tags: [Auth]
+      summary: Logout admin
+      responses:
+        '204': { description: Cookie dihapus }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /admin/me:
+    get:
+      tags: [Auth]
+      summary: Admin yang sedang login
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminUser' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ------------------------------------------------------------- Pesanan
+  /admin/orders:
+    get:
+      tags: [Pesanan]
+      summary: Daftar pesanan (cari dan filter)
+      parameters:
+        - { name: q, in: query, description: "Cari kode pesanan, nama, atau nomor HP", schema: { type: string } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/OrderStatus' } }
+        - { name: pay_status, in: query, schema: { $ref: '#/components/schemas/PayStatus' } }
+        - { name: delivery_date, in: query, description: Pesanan yang punya pengiriman pada tanggal ini, schema: { type: string, format: date } }
+        - { name: overdue, in: query, description: true = hanya yang lewat batas bayar, schema: { type: boolean } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: page_size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/OrderSummary' }
+                  page: { type: integer }
+                  page_size: { type: integer }
+                  total: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Pesanan]
+      summary: Buat pesanan besar (Fitur B, tanpa Gemini)
+      description: |
+        Untuk pesanan kolaborasi atau pesanan mendadak: item bebas, bundling, bonus,
+        beberapa tanggal kirim. Item dikelompokkan per pengiriman. Status awal Menunggu Pembayaran atau Diproses sesuai pay_timing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BigOrderInput' }
+      responses:
+        '201':
+          description: Dibuat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /admin/orders/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/OrderId' }
+    get:
+      tags: [Pesanan]
+      summary: Detail pesanan lengkap (termasuk riwayat)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/orders/{id}/confirm:
+    post:
+      tags: [Pesanan]
+      summary: Konfirmasi pesanan
+      description: |
+        Menunggu Konfirmasi menjadi Menunggu Pembayaran (bayar di muka) atau Diproses
+        (bayar setelah kirim). Ongkir hanya untuk pengiriman diantar Nabila; Ambil Sendiri Rp0.
+        Diskon opsional, tampil sebagai baris di invoice.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pay_timing]
+              properties:
+                pay_timing: { $ref: '#/components/schemas/PayTiming' }
+                discount: { type: integer, minimum: 0, default: 0 }
+                shipping_fees:
+                  type: array
+                  description: Ongkir per pengiriman
+                  items:
+                    type: object
+                    required: [delivery_id, shipping_fee]
+                    properties:
+                      delivery_id: { type: integer }
+                      shipping_fee: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /admin/orders/{id}/send-bill:
+    post:
+      tags: [Pesanan]
+      summary: Kirim Tagihan (tautan wa.me)
+      description: |
+        Mencatat waktu kirim tagihan (invoice_sent_at). Batas bayar 4 jam dihitung dari sini
+        dan dievaluasi saat dibaca (tanpa cron).
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wa_link: { type: string, format: uri }
+                  invoice_sent_at: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /admin/orders/{id}/reschedule:
+    post:
+      tags: [Pesanan]
+      summary: Jadwalkan ulang satu pengiriman
+      description: Alasan tersimpan di riwayat (order_events). Pelanggan dikabari Nabila lewat wa.me.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delivery_id, new_date, reason]
+              properties:
+                delivery_id: { type: integer }
+                new_date: { type: string, format: date }
+                reason: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: '#/components/schemas/Order' }
+                  wa_link: { type: string, format: uri }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /admin/orders/{id}/cancel:
+    post:
+      tags: [Pesanan]
+      summary: Batalkan atau tolak pesanan
+      description: Semua pembatalan dilakukan admin. Alasan tersimpan di riwayat.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /admin/orders/{id}/complete:
+    post:
+      tags: [Pesanan]
+      summary: Tandai Selesai
+      description: Hanya dari Diproses, dan hanya setelah semua pengiriman Terkirim.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  # ---------------------------------------------------------- Pengiriman
+  /admin/deliveries/{id}:
+    patch:
+      tags: [Pengiriman]
+      summary: Ubah status kirim atau ongkir satu pengiriman
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                delivery_status: { $ref: '#/components/schemas/DeliveryStatus' }
+                shipping_fee: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Delivery' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------- Pembayaran
+  /admin/orders/{id}/payments:
+    parameters:
+      - { $ref: '#/components/parameters/OrderId' }
+    get:
+      tags: [Pembayaran]
+      summary: Daftar pembayaran satu pesanan
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Payment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Pembayaran]
+      summary: Catat DP, pelunasan, atau pengembalian (refund)
+      description: |
+        Nominal DP diisi admin. refund hanya untuk pesanan Dibatalkan yang sudah dibayar.
+        Status bayar pesanan dan sisa tagihan dihitung ulang server.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, method, amount]
+              properties:
+                type: { $ref: '#/components/schemas/PaymentType' }
+                method: { $ref: '#/components/schemas/PaymentMethod' }
+                amount: { type: integer, minimum: 1 }
+                paid_at: { type: string, format: date-time, description: Default sekarang }
+      responses:
+        '201':
+          description: Dicatat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  # ------------------------------------------------------------- Invoice
+  /admin/orders/{id}/invoices:
+    parameters:
+      - { $ref: '#/components/parameters/OrderId' }
+    post:
+      tags: [Invoice]
+      summary: Terbitkan invoice atau revisi
+      description: |
+        Nomor INV/YYYYMMDD/MYM/NNN, urutan NNN reset tiap hari (mulai 001).
+        Pemanggilan berikutnya untuk pesanan yang sama menghasilkan revisi (-v2, -v3).
+      responses:
+        '201':
+          description: Diterbitkan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invoice' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /admin/invoices/{id}/pdf:
+    get:
+      tags: [Invoice]
+      summary: Unduh PDF invoice (dibuat saat diminta)
+      description: Isi PDF sama dengan data; ongkir per pengiriman.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: PDF
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # -------------------------------------------------------- Daftar masak
+  /admin/kitchen:
+    get:
+      tags: [Daftar masak]
+      summary: Daftar masak per tanggal
+      description: |
+        Berisi pesanan Diproses. Pesanan Menunggu Pembayaran tampil di bagian
+        terpisah "unpaid". Semua opsi tampil per porsi. Label MooLabel disertakan
+        bila layanan AI aktif; bila AI gagal, catatan asli tetap tampil.
+      parameters:
+        - { name: date, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date: { type: string, format: date }
+                  processed:
+                    type: array
+                    items: { $ref: '#/components/schemas/KitchenEntry' }
+                  unpaid:
+                    type: array
+                    items: { $ref: '#/components/schemas/KitchenEntry' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ---------------------------------------------------------------- Menu
+  /admin/menus:
+    get:
+      tags: [Menu]
+      summary: Semua menu (termasuk yang habis)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Menu' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Menu]
+      summary: Tambah menu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MenuInput' }
+      responses:
+        '201':
+          description: Dibuat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Menu' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /admin/menus/{id}:
+    patch:
+      tags: [Menu]
+      summary: Ubah harga, foto, atau tersedia/habis
+      description: Harga baru hanya berlaku untuk pesanan berikutnya.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { type: string }
+                price: { type: integer, minimum: 0 }
+                photo_url: { type: string, format: uri }
+                is_available: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Menu' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/menus/{id}/options:
+    post:
+      tags: [Menu]
+      summary: Tambah opsi untuk satu menu
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                option_group: { type: string }
+                name: { type: string }
+                extra_price: { type: integer, minimum: 0, default: 0 }
+      responses:
+        '201':
+          description: Dibuat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MenuOption' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/menu-options/{id}:
+    patch:
+      tags: [Menu]
+      summary: Ubah nama atau harga tambahan satu opsi
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                option_group: { type: string }
+                name: { type: string }
+                extra_price: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MenuOption' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/uploads:
+    post:
+      tags: [Menu]
+      summary: Unggah foto menu atau gambar QRIS (ke Vercel Blob)
+      description: Tipe dan ukuran gambar dicek di server.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [kind, file]
+              properties:
+                kind: { type: string, enum: [menu_photo, qris] }
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Terunggah
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, format: uri }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ----------------------------------------------------------- Pengaturan
+  /admin/settings:
+    get:
+      tags: [Pengaturan]
+      summary: Pengaturan bank dan QRIS
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Settings' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Pengaturan]
+      summary: Simpan pengaturan bank dan QRIS
+      description: Halaman tagihan memakai data terbaru.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Settings' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Settings' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # -------------------------------------------------------- Tanggal tutup
+  /admin/closed-dates:
+    get:
+      tags: [Tanggal tutup]
+      summary: Daftar tanggal tutup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ClosedDate' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Tanggal tutup]
+      summary: Tutup satu tanggal (fitur tambahan)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [closed_date]
+              properties:
+                closed_date: { type: string, format: date }
+                reason: { type: string }
+      responses:
+        '201':
+          description: Dibuat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClosedDate' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /admin/closed-dates/{id}:
+    delete:
+      tags: [Tanggal tutup]
+      summary: Buka kembali satu tanggal
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: Dihapus }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # --------------------------------------------------------------- Review
+  /admin/orders/{id}/review-link:
+    post:
+      tags: [Review]
+      summary: Buat tautan review bertoken (tambahan)
+      description: Hanya untuk pesanan Selesai. Satu pesanan satu review. Dikirim lewat wa.me.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wa_link: { type: string, format: uri }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /admin/reviews:
+    get:
+      tags: [Review]
+      summary: Daftar review untuk moderasi (tambahan)
+      parameters:
+        - { name: moderation_status, in: query, schema: { $ref: '#/components/schemas/ModerationStatus' } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Review' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /admin/reviews/{id}:
+    patch:
+      tags: [Review]
+      summary: Setujui atau tolak review
+      description: Hanya menolak spam, kata kasar, atau data pribadi; bukan review negatif.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [moderation_status]
+              properties:
+                moderation_status: { $ref: '#/components/schemas/ModerationStatus' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ------------------------------------------------------------ Pelanggan
+  /admin/customers/search:
+    get:
+      tags: [Pelanggan]
+      summary: Cari pelanggan lewat nomor HP (untuk Anonimkan)
+      parameters:
+        - { name: phone, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_count: { type: integer }
+                  order_codes:
+                    type: array
+                    items: { type: string }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /admin/customers/anonymize:
+    post:
+      tags: [Pelanggan]
+      summary: Anonimkan data satu nomor HP (tambahan)
+      description: |
+        Nama, HP, dan alamat dihapus di semua pesanan nomor itu. Menu dan total tetap untuk rekap.
+        Tidak bisa dibatalkan.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  anonymized_orders: { type: integer }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- Rekap
+  /admin/recap:
+    get:
+      tags: [Rekap]
+      summary: Rekap keuangan harian atau mingguan (tambahan, bersama DS)
+      description: Tanpa data pribadi. Pesanan Dibatalkan tidak dihitung sebagai omzet.
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: granularity, in: query, schema: { type: string, enum: [daily, weekly], default: daily } }
+        - { name: format, in: query, description: csv untuk unduh, schema: { type: string, enum: [json, csv], default: json } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RecapRow' }
+            text/csv:
+              schema: { type: string }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ============================================================ FastAPI
+  # Hanya dipanggil Express. Semua permintaan wajib header X-Internal-Secret.
+  /v1/health:
+    get:
+      tags: [Internal FastAPI]
+      summary: Cek layanan AI hidup
+      servers:
+        - url: /
+          description: FastAPI (macymoo-ai)
+      security:
+        - internalSecret: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/moolabel/predict:
+    post:
+      tags: [Internal FastAPI]
+      summary: Beri label pada catatan pesanan (MooLabel)
+      description: |
+        USULAN, disepakati dengan AI. Multi-label: satu catatan bisa berisi beberapa permintaan.
+        Catatan kosong menghasilkan labels []. Daftar label final ada di
+        macymoo-ai/app/moolabel/labels.py. Pertentangan catatan dengan opsi
+        ditandai aturan di backend, bukan oleh model.
+      servers:
+        - url: /
+          description: FastAPI (macymoo-ai)
+      security:
+        - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [labels]
+                properties:
+                  labels:
+                    type: array
+                    items:
+                      type: object
+                      required: [label]
+                      properties:
+                        label: { type: string }
+                        score: { type: number, minimum: 0, maximum: 1 }
+                  model_version: { type: string, example: moolabel-linsvm-v1 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/moobot/chat:
+    post:
+      tags: [Internal FastAPI]
+      summary: Tanya MooBot (FAQ pembeli)
+      description: |
+        USULAN, disepakati dengan AI. Menu dan harga diambil dari database oleh Express
+        dan dikirim sebagai context, bukan dari ingatan model. MooBot tanpa akses data
+        pesanan dan menolak topik di luar usaha. Express menerapkan rate limit dan batas
+        panjang pesan; bila layanan gagal, Express mengembalikan 503 dengan pesan jelas.
+      servers:
+        - url: /
+          description: FastAPI (macymoo-ai)
+      security:
+        - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string, maxLength: 500 }
+                context:
+                  type: object
+                  properties:
+                    menus:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name: { type: string }
+                          price: { type: integer }
+                          options:
+                            type: array
+                            items: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reply]
+                properties:
+                  reply: { type: string }
+                  refused: { type: boolean, description: true bila pertanyaan di luar konteks }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: JWT admin di httpOnly cookie (SameSite).
+    internalSecret:
+      type: apiKey
+      in: header
+      name: X-Internal-Secret
+      description: Shared secret Express ke FastAPI. Nilai asli hanya di environment variable.
+
+  parameters:
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+
+  responses:
+    ValidationError:
+      description: Input tidak valid
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Nomor HP tidak valid
+              details: [{ field: phone, message: Hanya angka }]
+    Unauthorized:
+      description: Belum login atau secret salah
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: { code: UNAUTHORIZED, message: Silakan login terlebih dahulu } }
+    NotFound:
+      description: Tidak ditemukan
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: { code: NOT_FOUND, message: Data tidak ditemukan } }
+    InvalidTransition:
+      description: Perpindahan status tidak sah
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: { code: INVALID_TRANSITION, message: Pesanan tidak bisa berpindah dari Menunggu Konfirmasi ke Selesai } }
+    RateLimited:
+      description: Terlalu banyak percobaan
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: { code: RATE_LIMITED, message: Terlalu banyak percobaan, coba lagi nanti } }
+    ServiceUnavailable:
+      description: Layanan AI tidak tersedia atau timeout
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: { code: AI_UNAVAILABLE, message: MooBot sedang tidak tersedia, coba lagi nanti } }
+
+  schemas:
+    Error:
+      type: object
+      description: USULAN format error standar (dipakai errorHandler.js), disepakati semua path.
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, INVALID_TRANSITION, RATE_LIMITED, AI_UNAVAILABLE, INTERNAL_ERROR]
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: { type: string }
+                  message: { type: string }
+
+    OrderStatus:
+      type: string
+      enum: [Menunggu Konfirmasi, Menunggu Pembayaran, Diproses, Selesai, Dibatalkan]
+    PayStatus:
+      type: string
+      enum: [Belum Bayar, DP, Lunas, Dikembalikan]
+    DeliveryStatus:
+      type: string
+      enum: [Dijadwalkan, Terkirim]
+    DeliveryMethod:
+      type: string
+      description: Sama dengan CHECK di database.
+      enum: [antar_nabila, ambil_sendiri]
+    PayTiming:
+      type: string
+      description: Sama dengan CHECK di database. di_muka = bayar sebelum masak; setelah_kirim = hanya untuk yang diizinkan Nabila.
+      enum: [di_muka, setelah_kirim]
+    PaymentType:
+      type: string
+      description: Sama dengan CHECK di database. Jumlah selalu positif, arah ditentukan jenis. Pembayaran bersih = (dp + pelunasan) - refund.
+      enum: [dp, pelunasan, refund]
+    PaymentMethod:
+      type: string
+      description: Sama dengan CHECK di database.
+      enum: [qris, transfer, tunai]
+    ModerationStatus:
+      type: string
+      description: Sama dengan CHECK di database.
+      enum: [pending, approved, rejected]
+
+    AdminUser:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+
+    OrderItemInput:
+      type: object
+      description: |
+        Item menu: isi menu_id (harga dasar diambil server dari menu; unit_price dari browser diabaikan).
+        Item bebas, bundling, bonus, kolaborasi: kosongkan menu_id, isi custom_name dan unit_price (boleh 0).
+      required: [item_type, qty]
+      properties:
+        item_type: { $ref: '#/components/schemas/ItemType' }
+        menu_id: { type: integer, nullable: true }
+        custom_name: { type: string }
+        unit_price: { type: integer, minimum: 0 }
+        qty: { type: integer, minimum: 1 }
+        option_ids:
+          type: array
+          items: { type: integer }
+        note: { type: string }
+
+    DeliveryInput:
+      type: object
+      description: Satu pengiriman beserta item yang termasuk di dalamnya.
+      required: [delivery_date, method, items]
+      properties:
+        delivery_date: { type: string, format: date }
+        method: { $ref: '#/components/schemas/DeliveryMethod' }
+        address: { type: string, description: Wajib bila antar_nabila }
+        shipping_fee: { type: integer, minimum: 0, default: 0 }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/OrderItemInput' }
+
+    BigOrderInput:
+      type: object
+      required: [customer_name, phone, pay_timing, deliveries]
+      properties:
+        customer_name: { type: string }
+        phone: { type: string }
+        pay_timing: { $ref: '#/components/schemas/PayTiming' }
+        discount: { type: integer, minimum: 0, default: 0 }
+        deliveries:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/DeliveryInput' }
+
+    ItemType:
+      type: string
+      description: Sama dengan CHECK di database.
+      enum: [menu, item_bebas, bundling, bonus, kolaborasi]
+
+    OrderItemOption:
+      type: object
+      description: Opsi yang dipilih pada satu item, dengan harga tambahan yang disalin saat pesan.
+      properties:
+        menu_option_id: { type: integer }
+        option_group: { type: string, nullable: true }
+        name: { type: string }
+        extra_price: { type: integer }
+
+    OrderItem:
+      type: object
+      description: Total item = qty * (unit_price + jumlah extra_price opsi).
+      properties:
+        id: { type: integer }
+        delivery_id: { type: integer }
+        item_type: { $ref: '#/components/schemas/ItemType' }
+        menu_id: { type: integer, nullable: true }
+        name: { type: string }
+        qty: { type: integer }
+        unit_price: { type: integer, description: Harga dasar yang disalin saat pesan }
+        options:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItemOption' }
+        note: { type: string, nullable: true }
+        labels:
+          type: array
+          description: Hasil MooLabel (kosong bila AI tidak aktif)
+          items: { type: string }
+
+    Delivery:
+      type: object
+      properties:
+        id: { type: integer }
+        delivery_date: { type: string, format: date }
+        method: { $ref: '#/components/schemas/DeliveryMethod' }
+        address: { type: string, nullable: true }
+        shipping_fee: { type: integer }
+        delivery_status: { $ref: '#/components/schemas/DeliveryStatus' }
+
+    Payment:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/PaymentType' }
+        method: { $ref: '#/components/schemas/PaymentMethod' }
+        amount: { type: integer }
+        paid_at: { type: string, format: date-time }
+
+    Invoice:
+      type: object
+      properties:
+        id: { type: integer }
+        order_id: { type: integer }
+        invoice_no: { type: string, example: INV/20261109/MYM/001, description: Tanpa akhiran revisi }
+        revision: { type: integer, example: 1 }
+        display_no: { type: string, example: INV/20261109/MYM/001-v2, description: Nomor yang ditampilkan; akhiran -vN dari revisi 2 ke atas }
+        issued_at: { type: string, format: date }
+
+    OrderEvent:
+      type: object
+      properties:
+        event_type: { type: string }
+        delivery_id: { type: integer, nullable: true }
+        from_status: { type: string, nullable: true }
+        to_status: { type: string, nullable: true }
+        old_date: { type: string, format: date, nullable: true }
+        new_date: { type: string, format: date, nullable: true }
+        reason: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    OrderSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        order_code: { type: string }
+        customer_name: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        source: { type: string, enum: [web_form, admin_form] }
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        pay_status: { $ref: '#/components/schemas/PayStatus' }
+        total: { type: integer }
+        overdue: { type: boolean, description: "Lewat batas bayar 4 jam (tanda saja, status tidak berubah)" }
+        created_at: { type: string, format: date-time }
+
+    Order:
+      allOf:
+        - $ref: '#/components/schemas/OrderSummary'
+        - type: object
+          properties:
+            pay_timing: { $ref: '#/components/schemas/PayTiming' }
+            discount: { type: integer }
+            subtotal: { type: integer }
+            shipping_total: { type: integer }
+            paid_total: { type: integer }
+            balance: { type: integer, description: Sisa tagihan }
+            invoice_sent_at: { type: string, format: date-time, nullable: true }
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/OrderItem' }
+            deliveries:
+              type: array
+              items: { $ref: '#/components/schemas/Delivery' }
+            payments:
+              type: array
+              items: { $ref: '#/components/schemas/Payment' }
+            invoices:
+              type: array
+              items: { $ref: '#/components/schemas/Invoice' }
+            events:
+              type: array
+              items: { $ref: '#/components/schemas/OrderEvent' }
+
+    KitchenEntry:
+      type: object
+      properties:
+        order_id: { type: integer }
+        order_code: { type: string }
+        delivery_id: { type: integer }
+        method: { $ref: '#/components/schemas/DeliveryMethod' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+
+    MenuOption:
+      type: object
+      properties:
+        id: { type: integer }
+        option_group: { type: string, nullable: true, description: "Opsi satu kelompok saling meniadakan (contoh: pedas)" }
+        name: { type: string }
+        extra_price: { type: integer }
+
+    Menu:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        price: { type: integer }
+        photo_url: { type: string, format: uri, nullable: true }
+        is_available: { type: boolean }
+        options:
+          type: array
+          items: { $ref: '#/components/schemas/MenuOption' }
+
+    MenuInput:
+      type: object
+      required: [name, price]
+      properties:
+        name: { type: string }
+        price: { type: integer, minimum: 0 }
+        photo_url: { type: string, format: uri }
+        is_available: { type: boolean, default: true }
+
+    Settings:
+      type: object
+      description: USULAN kunci pengaturan; disimpan sebagai pasangan kunci-nilai di tabel settings.
+      properties:
+        bank_name: { type: string }
+        bank_account_number: { type: string }
+        bank_account_holder: { type: string }
+        qris_image_url: { type: string, format: uri }
+
+    ClosedDate:
+      type: object
+      properties:
+        id: { type: integer }
+        closed_date: { type: string, format: date }
+        reason: { type: string, nullable: true }
+
+    Review:
+      type: object
+      properties:
+        id: { type: integer }
+        order_code: { type: string }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, maxLength: 200 }
+        moderation_status: { $ref: '#/components/schemas/ModerationStatus' }
+
+    RecapRow:
+      type: object
+      description: Hanya angka keuangan; tanpa nama, HP, atau alamat.
+      properties:
+        period: { type: string, description: "Tanggal (daily) atau tanggal awal minggu (weekly)" }
+        order_count: { type: integer }
+        revenue: { type: integer }
+        shipping_total: { type: integer }
+        discount_total: { type: integer }
+        paid_total: { type: integer }
+        unpaid_total: { type: integer }
+
+security:
+  - cookieAuth: []
