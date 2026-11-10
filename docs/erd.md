@@ -1,6 +1,6 @@
 # ERD macymoo
 
-Sumber awal: `erd_macyourmoo.drawio` dari tim DS, direvisi sesuai catatan review DS.
+Sumber awal: `erd_macyourmoo.drawio` dari tim DS, direvisi sesuai catatan review DS dan KF.
 Kolom dan tipe lengkap ada di `backend/migrations/001_init.sql`.
 
 ```mermaid
@@ -21,7 +21,7 @@ erDiagram
   admin_users |o--o{ order_events : mencatat
 ```
 
-Tabel mandiri (tanpa relasi): `closed_dates`, `settings`, `chat_logs`.
+Tabel mandiri (tanpa relasi): `closed_dates`, `settings`, `chat_logs`, `rate_limits`.
 
 ## Aturan perhitungan
 
@@ -39,7 +39,7 @@ Tabel mandiri (tanpa relasi): `closed_dates`, `settings`, `chat_logs`.
 |---|---|
 | `orders.status` | Menunggu Konfirmasi, Menunggu Pembayaran, Diproses, Selesai, Dibatalkan |
 | `orders.source` | web_form, admin_form |
-| `orders.pay_timing` | di_muka, setelah_kirim |
+| `orders.pay_timing` | di_muka (default), setelah_kirim |
 | `orders.pay_status` | Belum Bayar, DP, Lunas, Dikembalikan |
 | `deliveries.method` | antar_nabila, ambil_sendiri |
 | `deliveries.delivery_status` | Dijadwalkan, Terkirim |
@@ -47,5 +47,11 @@ Tabel mandiri (tanpa relasi): `closed_dates`, `settings`, `chat_logs`.
 | `payments.type` | dp, pelunasan, refund |
 | `payments.method` | qris, transfer, tunai |
 | `reviews.moderation_status` | pending, approved, rejected |
+| `order_events.event_type` | status_change, reschedule, cancel, bill_sent |
+| `order_events.from_status`, `to_status` | Sama dengan lima status pesanan |
 
-`menu_options.option_group` dan `order_events.event_type` divalidasi di backend, bukan di database.
+`menu_options.option_group` divalidasi di backend (Joi), bukan di database.
+
+Catatan untuk backend: `order_item_options.extra_price` tidak punya default, jadi harga opsi wajib disalin saat pesan dibuat (isi 0 bila gratis). Item bertipe `menu` wajib punya `menu_id`.
+
+`rate_limits` tidak ada di ERD DS; ditambahkan karena KF bagian 11 menyimpan rate limit di database (serverless). Isinya hash alamat IP, bukan IP mentah.

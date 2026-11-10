@@ -1,5 +1,6 @@
--- 001_init.sql: skema awal macymoo (15 tabel).
--- Sumber: erd_macyourmoo (tim DS), direvisi sesuai catatan review DS (erd_review_notes.md).
+-- 001_init.sql: skema awal macymoo (16 tabel).
+-- Sumber: erd_macyourmoo (tim DS), direvisi sesuai catatan review DS (erd_review_notes.md)
+-- dan macymoo_Keputusan_Final.md (KF).
 --
 -- Aturan penting:
 -- * Uang = INTEGER (Rupiah bulat).
@@ -39,7 +40,8 @@ CREATE TABLE orders (
   source          TEXT    NOT NULL CHECK (source IN ('web_form', 'admin_form')),
   status          TEXT    NOT NULL DEFAULT 'Menunggu Konfirmasi'
                   CHECK (status IN ('Menunggu Konfirmasi', 'Menunggu Pembayaran', 'Diproses', 'Selesai', 'Dibatalkan')),
-  pay_timing      TEXT    CHECK (pay_timing IN ('di_muka', 'setelah_kirim')),
+  pay_timing      TEXT    NOT NULL DEFAULT 'di_muka'   -- KF bagian 4: default bayar di muka
+                  CHECK (pay_timing IN ('di_muka', 'setelah_kirim')),
   pay_status      TEXT    NOT NULL DEFAULT 'Belum Bayar'
                   CHECK (pay_status IN ('Belum Bayar', 'DP', 'Lunas', 'Dikembalikan')),
   discount        INTEGER NOT NULL DEFAULT 0 CHECK (discount >= 0),
@@ -75,13 +77,14 @@ CREATE TABLE order_items (
   qty         INTEGER NOT NULL CHECK (qty > 0),
   unit_price  INTEGER NOT NULL CHECK (unit_price >= 0),
   note        TEXT,
-  CHECK (menu_id IS NOT NULL OR custom_name IS NOT NULL)
+  CHECK (menu_id IS NOT NULL OR custom_name IS NOT NULL),
+  CHECK (item_type <> 'menu' OR menu_id IS NOT NULL)
 );
 
 CREATE TABLE order_item_options (
   order_item_id  INTEGER NOT NULL REFERENCES order_items(id),
   menu_option_id INTEGER NOT NULL REFERENCES menu_options(id),
-  extra_price    INTEGER NOT NULL DEFAULT 0 CHECK (extra_price >= 0),
+  extra_price    INTEGER NOT NULL CHECK (extra_price >= 0),   -- tanpa default: backend wajib menyalin harga saat pesan (0 bila gratis)
   PRIMARY KEY (order_item_id, menu_option_id)
 );
 
@@ -135,6 +138,9 @@ CREATE TABLE admin_users (
   password_hash TEXT NOT NULL
 );
 
+-- event_type: status_change (perpindahan status), reschedule (jadwal ulang satu pengiriman),
+--             cancel (pembatalan; from_status dan to_status juga diisi), bill_sent (Kirim Tagihan).
+-- Lewat batas bayar tidak dicatat sebagai event: dihitung saat dibaca dari invoice_sent_at.
 -- admin_id boleh kosong. delivery_id boleh kosong (dipakai untuk jadwal ulang
 -- satu pengiriman pada pesanan multi-pengiriman).
 CREATE TABLE order_events (
@@ -142,9 +148,12 @@ CREATE TABLE order_events (
   order_id    INTEGER NOT NULL REFERENCES orders(id),
   delivery_id INTEGER REFERENCES deliveries(id),
   admin_id    INTEGER REFERENCES admin_users(id),
-  event_type  TEXT    NOT NULL,
-  from_status TEXT,
-  to_status   TEXT,
+  event_type  TEXT    NOT NULL
+              CHECK (event_type IN ('status_change', 'reschedule', 'cancel', 'bill_sent')),
+  from_status TEXT
+              CHECK (from_status IN ('Menunggu Konfirmasi', 'Menunggu Pembayaran', 'Diproses', 'Selesai', 'Dibatalkan')),
+  to_status   TEXT
+              CHECK (to_status IN ('Menunggu Konfirmasi', 'Menunggu Pembayaran', 'Diproses', 'Selesai', 'Dibatalkan')),
   old_date    DATE,
   new_date    DATE,
   reason      TEXT,
@@ -167,4 +176,15 @@ CREATE TABLE chat_logs (
   user_message TEXT NOT NULL,
   bot_reply    TEXT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Rate limit disimpan di database karena serverless (KF bagian 11).
+-- key: pembatas dan pengenalnya, mis. 'login:<hash>', 'order:<hash>', 'moobot:<hash>', 'review:<hash>'.
+-- Simpan hash alamat IP, bukan IP mentah (data pribadi).
+-- Baris lama dihapus oleh backend saat menulis (tanpa cron).
+CREATE TABLE rate_limits (
+  key          TEXT        NOT NULL,
+  window_start TIMESTAMPTZ NOT NULL,
+  hits         INTEGER     NOT NULL DEFAULT 1 CHECK (hits > 0),
+  PRIMARY KEY (key, window_start)
 );
