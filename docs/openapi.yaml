@@ -106,6 +106,60 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Menu'
+              example:
+                menus:
+                  - id: 1
+                    name: Mackster
+                    description: Mac & cheese, saus keju kornet
+                    price: 35000
+                    photo_url: https://example.com/menu-1.jpg
+                    is_available: true
+                    options:
+                      - { id: 1, menu_id: 1, option_group: pedas, name: Light, extra_price: 0 }
+                      - { id: 2, menu_id: 1, option_group: pedas, name: Medium, extra_price: 0 }
+                      - { id: 3, menu_id: 1, option_group: pedas, name: Spicy, extra_price: 0 }
+                      - { id: 4, menu_id: 1, option_group: keju, name: Tambah keju, extra_price: 3000 }
+                  - id: 2
+                    name: Nutrimac
+                    description: Mac & cheese, brokoli, dada ayam panggang
+                    price: 37000
+                    photo_url: https://example.com/menu-2.jpg
+                    is_available: true
+                    options:
+                      - { id: 5, menu_id: 2, option_group: pedas, name: Light, extra_price: 0 }
+                      - { id: 6, menu_id: 2, option_group: pedas, name: Medium, extra_price: 0 }
+                      - { id: 7, menu_id: 2, option_group: pedas, name: Spicy, extra_price: 0 }
+                      - { id: 8, menu_id: 2, option_group: keju, name: Tambah keju, extra_price: 3000 }
+                      - { id: 9, menu_id: 2, option_group: tanpa_makaroni, name: Tanpa makaroni, extra_price: 0 }
+                      - { id: 10, menu_id: 2, option_group: tanpa_brokoli, name: Tanpa brokoli, extra_price: 0 }
+                      - { id: 11, menu_id: 2, option_group: ayam, name: Ayam dada, extra_price: 0 }
+                      - { id: 12, menu_id: 2, option_group: ayam, name: Ayam paha, extra_price: 2000 }
+                  - id: 3
+                    name: Wraphoria
+                    description: Mac & cheese dan ayam krispi dalam tortila
+                    price: 27000
+                    photo_url: https://example.com/menu-3.jpg
+                    is_available: true
+                    options:
+                      - { id: 13, menu_id: 3, option_group: pedas, name: Light, extra_price: 0 }
+                      - { id: 14, menu_id: 3, option_group: pedas, name: Medium, extra_price: 0 }
+                      - { id: 15, menu_id: 3, option_group: pedas, name: Spicy, extra_price: 0 }
+                      - { id: 16, menu_id: 3, option_group: keju, name: Tambah keju, extra_price: 3000 }
+                      - { id: 17, menu_id: 3, option_group: ayam, name: Ayam dada, extra_price: 0 }
+                      - { id: 18, menu_id: 3, option_group: ayam, name: Ayam paha, extra_price: 2000 }
+                  - id: 4
+                    name: Mac Bites
+                    description: 4 bites berbalut paper rice, isian ayam krispi, saus keju
+                    price: 25000
+                    photo_url: https://example.com/menu-4.jpg
+                    is_available: true
+                    options:
+                      - { id: 19, menu_id: 4, option_group: pedas, name: Light, extra_price: 0 }
+                      - { id: 20, menu_id: 4, option_group: pedas, name: Medium, extra_price: 0 }
+                      - { id: 21, menu_id: 4, option_group: pedas, name: Spicy, extra_price: 0 }
+                      - { id: 22, menu_id: 4, option_group: keju, name: Tambah keju, extra_price: 3000 }
+                      - { id: 23, menu_id: 4, option_group: ayam, name: Ayam dada, extra_price: 0 }
+                      - { id: 24, menu_id: 4, option_group: ayam, name: Ayam paha, extra_price: 2000 }
 
   /orders:
     post:
@@ -143,7 +197,7 @@ paths:
               items:
                 - menu_id: 1
                   qty: 2
-                  option_ids: [2]
+                  option_ids: [1]
                   note: sausnya dipisah ya
                 - menu_id: 2
                   qty: 1
@@ -182,7 +236,7 @@ paths:
                     qty: 2
                     line_total: 70000
                     options:
-                      - menu_option_id: 2
+                      - menu_option_id: 1
                         name: Light
                         option_group: pedas
                         extra_price: 0
