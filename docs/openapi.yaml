@@ -230,9 +230,11 @@ paths:
         - name: token
           in: path
           required: true
-          description: "`public_token` pesanan."
+          description: "`public_token` pesanan: token acak panjang, bukan nomor urut (KF 12 aturan 1)."
           schema:
             type: string
+            minLength: 32
+          example: 3q9vXw1Zt8Lk0PfB6hYcR2sJmN4dUeAa
       responses:
         '200':
           description: Status pesanan
