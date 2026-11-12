@@ -13,11 +13,10 @@ info:
     | Bagian | Pemilik | Status |
     |---|---|---|
     | Auth, Admin, Internal FastAPI, komponen bersama | Rama | Draf ini |
-    | Publik (`/menus`, `/orders`, `/moobot/chat`, dst.) | Darnell | Tambahkan di bawah penanda `PUBLIK` pada `paths` |
+    | Publik (`/menus`, `/orders`, `/moobot/chat`, dst.) | Darnell | Draf ini (penanda `PUBLIK` pada `paths`) |
 
-    Skema yang dibutuhkan bagian publik (Menu, Delivery, OrderStatus, Error, dsb.)
-    sudah ada di `components`; pakai lewat `$ref`, jangan duplikasi.
-    Operasi publik wajib memakai `security: []`.
+    Bagian publik memakai skema bersama (Menu, Delivery, OrderItem, OrderTotals, Error, dsb.)
+    lewat `$ref`. Operasi publik wajib memakai `security: []`.
 
     ## Aturan umum (KF 9.8)
     - Base URL Express `/api/v1`. JSON. Uang = Rupiah bulat (integer). Tanggal `YYYY-MM-DD`, zona Asia/Jakarta.
@@ -67,6 +66,10 @@ servers:
     description: Produksi (ganti setelah deploy awal)
 
 tags:
+  - name: Publik
+    description: Tanpa login. Dipakai halaman pelanggan.
+  - name: Publik - Tambahan
+    description: Dikerjakan setelah alur utama lulus uji.
   - name: Auth
   - name: Admin - Pesanan
   - name: Admin - Pembayaran
@@ -79,11 +82,310 @@ tags:
 
 paths:
   # ===========================================================================
-  # PUBLIK (Darnell): tambahkan di sini
-  #   GET /menus, GET /closed-dates, POST /orders, GET /orders/status/{token},
-  #   POST /moobot/chat, GET /reviews, POST /reviews/{token}
+  # PUBLIK (Darnell)
   # Semua operasi publik memakai `security: []`.
   # ===========================================================================
+  /menus:
+    get:
+      tags: [Publik]
+      summary: Menu tersedia, opsi, dan harganya
+      description: |
+        Dipakai landing page, form PO, dan konteks MooBot. Hanya menu dengan `is_available = true`
+        (KF 9.8); menu yang habis tidak dikirim. Daftar lengkap ada di `GET /admin/menus`.
+      security: []
+      responses:
+        '200':
+          description: Daftar menu
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [menus]
+                properties:
+                  menus:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Menu'
+
+  /orders:
+    post:
+      tags: [Publik]
+      summary: Kirim pesanan dari form PO (tanpa login)
+      description: |
+        Satu pesanan = satu pengiriman (beberapa tanggal kirim hanya lewat MacLab).
+        Status awal `menunggu_konfirmasi`, `source = web_form`.
+        Harga menu dan opsi diambil server dari database; browser tidak mengirim harga.
+
+        Aturan validasi (400 `VALIDATION_ERROR` kecuali disebut lain):
+        - `delivery_date` paling cepat besok (zona Asia/Jakarta).
+        - `address` wajib bila `antar_nabila`.
+        - `option_ids` harus milik menu itu, paling banyak satu opsi per `option_group`.
+        - `agree_rules` harus `true`; `website` (honeypot) harus kosong.
+        - Turnstile gagal diverifikasi -> 400 `TURNSTILE_FAILED`.
+        - Tanggal ditutup Nabila -> 409 `DATE_CLOSED`.
+        - Ada menu yang habis -> 409 `MENU_UNAVAILABLE`.
+
+        Respons dipakai halaman ringkasan: untuk `ambil_sendiri`, `totals.grand_total` adalah
+        estimasi total; untuk `antar_nabila`, `totals.shipping_pending = true` dan angka itu
+        "belum termasuk ongkir". Total final terbit setelah Nabila konfirmasi.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicOrderCreate'
+            example:
+              customer_name: Budi
+              phone: '081234567890'
+              delivery_date: '2026-11-20'
+              method: ambil_sendiri
+              items:
+                - menu_id: 1
+                  qty: 2
+                  option_ids: [2]
+                  note: sausnya dipisah ya
+                - menu_id: 2
+                  qty: 1
+                  option_ids: []
+              agree_rules: true
+              turnstile_token: XXXX.DUMMY.TOKEN.XXXX
+      responses:
+        '201':
+          description: Pesanan tersimpan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicOrder'
+              example:
+                order_code: MYM-7K2QF
+                public_token: 3q9vXw1Zt8Lk0PfB6hYcR2sJmN4dUeAa
+                status: menunggu_konfirmasi
+                pay_status: belum_bayar
+                pay_timing: di_muka
+                pay_deadline_at: null
+                payment_overdue: false
+                deliveries:
+                  - id: 41
+                    delivery_date: '2026-11-20'
+                    method: ambil_sendiri
+                    shipping_fee: 0
+                    delivery_status: dijadwalkan
+                    delivered_at: null
+                items:
+                  - id: 101
+                    delivery_id: 41
+                    item_type: menu
+                    menu_id: 1
+                    name: Mackster
+                    unit_price: 35000
+                    qty: 2
+                    line_total: 70000
+                    options:
+                      - menu_option_id: 2
+                        name: Light
+                        option_group: pedas
+                        extra_price: 0
+                    note: sausnya dipisah ya
+                  - id: 102
+                    delivery_id: 41
+                    item_type: menu
+                    menu_id: 2
+                    name: Nutrimac
+                    unit_price: 37000
+                    qty: 1
+                    line_total: 37000
+                    options: []
+                    note: null
+                totals:
+                  subtotal: 107000
+                  shipping_total: 0
+                  discount: 0
+                  grand_total: 107000
+                  paid_net: 0
+                  balance_due: 107000
+                  refund_due: 0
+                  shipping_pending: false
+                wa_link: https://wa.me/6281200000000?text=Halo%20Kak%20Nabila%2C%20saya%20sudah%20pesan%20dengan%20kode%20MYM-7K2QF
+                created_at: '2026-11-12T10:15:00+07:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /orders/status/{token}:
+    get:
+      tags: [Publik]
+      summary: Status dan tagihan pesanan (link ber-token)
+      description: |
+        Satu link per pesanan (`/s/{token}`). Token salah -> 404 tanpa data apa pun.
+        `payment_info` (bank dan QRIS) tidak dikirim selama `menunggu_konfirmasi` atau `dibatalkan`;
+        setelah konfirmasi, halaman ini menjadi halaman tagihan dan nominal yang dibayar
+        adalah `totals.balance_due`.
+        Tidak memuat nama, nomor HP, alamat, label MooLabel, maupun riwayat admin.
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: "`public_token` pesanan: token acak panjang, bukan nomor urut (KF 12 aturan 1)."
+          schema:
+            type: string
+            minLength: 32
+          example: 3q9vXw1Zt8Lk0PfB6hYcR2sJmN4dUeAa
+      responses:
+        '200':
+          description: Status pesanan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicOrder'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /moobot/chat:
+    post:
+      tags: [Publik]
+      summary: Tanya MooBot (menu, harga, aturan)
+      description: |
+        Express menyusun konteks dari database lalu memanggil FastAPI `/v1/moobot/chat`.
+        Satu pesan per permintaan; riwayat percakapan tidak dikirim dan hanya ada di layar.
+        Pesan dan jawaban disimpan di `chat_logs` tanpa identitas.
+        Layanan AI gagal -> 503 `AI_UNAVAILABLE`; widget menampilkan pesan jelas dan form PO tetap jalan.
+        Turnstile gagal -> 400 `TURNSTILE_FAILED`.
+        Token Turnstile sekali pakai, jadi widget meminta token baru untuk tiap pesan (mode invisible).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message, turnstile_token]
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                turnstile_token:
+                  $ref: '#/components/schemas/TurnstileToken'
+            example:
+              message: Mackster harganya berapa?
+              turnstile_token: XXXX.DUMMY.TOKEN.XXXX
+      responses:
+        '200':
+          description: Jawaban MooBot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MooBotChatResponse'
+              example:
+                reply: Mackster harganya Rp35.000 per porsi.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/AiUnavailable'
+
+  /closed-dates:
+    get:
+      tags: [Publik - Tambahan]
+      summary: Tanggal yang ditutup Nabila
+      description: |
+        Hanya tanggal hari ini dan sesudahnya (zona Asia/Jakarta), urut naik. Form PO menonaktifkan
+        tanggal ini; server tetap memeriksa ulang di `POST /orders`.
+        Halaman admin Tutup Tanggal memakai daftar yang sama (`id` untuk `DELETE /admin/closed-dates/{id}`).
+      security: []
+      responses:
+        '200':
+          description: Daftar tanggal tutup
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [closed_dates]
+                properties:
+                  closed_dates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClosedDate'
+
+  /reviews:
+    get:
+      tags: [Publik - Tambahan]
+      summary: Review terverifikasi untuk landing page
+      description: |
+        Hanya review `approved`, terbaru lebih dulu, paling banyak 20.
+        Tanpa nama atau kode pesanan; frontend memberi label "Pembeli terverifikasi".
+      security: []
+      responses:
+        '200':
+          description: Daftar review
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reviews]
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicReview'
+
+  /reviews/{token}:
+    post:
+      tags: [Publik - Tambahan]
+      summary: Kirim review lewat link ber-token
+      description: |
+        Link dikirim Nabila lewat wa.me setelah pesanan Selesai. Satu pesanan satu review.
+        Review masuk dengan `moderation_status = pending` dan baru tampil setelah lolos moderasi.
+        - Token tidak dikenal -> 404.
+        - Token sudah dipakai -> 409 `REVIEW_ALREADY_SUBMITTED`.
+        - Token lewat 7 hari -> 409 `REVIEW_TOKEN_EXPIRED`.
+        - Komentar lebih dari 200 karakter atau rating di luar 1-5 -> 400.
+        - Turnstile gagal -> 400 `TURNSTILE_FAILED`.
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating, turnstile_token]
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+                  maxLength: 200
+                turnstile_token:
+                  $ref: '#/components/schemas/TurnstileToken'
+      responses:
+        '201':
+          description: Review diterima, menunggu moderasi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicReview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   # ---------------------------------------------------------------------------
   # AUTH
@@ -1285,6 +1587,16 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    AiUnavailable:
+      description: Layanan AI gagal menjawab
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: AI_UNAVAILABLE
+              message: MooBot sedang tidak bisa menjawab. Coba lagi nanti atau hubungi Nabila lewat WhatsApp.
     InternalUnauthorized:
       description: Header `X-Internal-Secret` kosong atau salah
       content:
@@ -1816,6 +2128,134 @@ components:
         amount:
           type: integer
           minimum: 1
+
+    # ---- Publik -----------------------------------------------------------
+    TurnstileToken:
+      type: string
+      minLength: 1
+      description: Token Cloudflare Turnstile dari widget; diverifikasi server, sekali pakai.
+    PublicOrderCreate:
+      type: object
+      required: [customer_name, phone, delivery_date, method, items, agree_rules, turnstile_token]
+      properties:
+        customer_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        phone:
+          type: string
+          description: Nomor HP Indonesia (divalidasi Joi).
+          example: '081234567890'
+        delivery_date:
+          type: string
+          format: date
+          description: Paling cepat besok; bukan tanggal tutup.
+        method:
+          $ref: '#/components/schemas/DeliveryMethod'
+        address:
+          type: string
+          maxLength: 300
+          description: Wajib bila `antar_nabila`. Untuk `ambil_sendiri` diabaikan dan tidak disimpan.
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [menu_id, qty]
+            properties:
+              menu_id:
+                type: integer
+              qty:
+                type: integer
+                minimum: 1
+                maximum: 50
+                description: "**[Usulan Darnell]** Batas 50 porsi per baris; lebih dari itu lewat WhatsApp (MacLab)."
+              option_ids:
+                type: array
+                items:
+                  type: integer
+                description: Id `menu_options` milik menu itu; paling banyak satu per `option_group`.
+              note:
+                type: string
+                maxLength: 500
+        agree_rules:
+          type: boolean
+          enum: [true]
+          description: Checkbox persetujuan Aturan Pemesanan dan Kebijakan Privasi.
+        turnstile_token:
+          $ref: '#/components/schemas/TurnstileToken'
+        website:
+          type: string
+          maxLength: 0
+          description: Honeypot; field tersembunyi yang harus kosong atau tidak dikirim.
+    PublicOrder:
+      type: object
+      description: |
+        Tampilan pesanan untuk pelanggan (ringkasan setelah submit dan halaman status).
+        Tanpa nama, nomor HP, dan alamat. `deliveries[].address`, `items[].labels`, dan
+        `items[].note_flags` tidak pernah dikirim di respons publik.
+      required: [order_code, public_token, status, pay_status, pay_timing, payment_overdue, deliveries, items, totals, wa_link, created_at]
+      properties:
+        order_code:
+          type: string
+        public_token:
+          type: string
+          description: Untuk menyusun link status `/s/{token}`.
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        pay_status:
+          $ref: '#/components/schemas/PayStatus'
+        pay_timing:
+          $ref: '#/components/schemas/PayTiming'
+        pay_deadline_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Batas bayar (4 jam sejak Kirim Tagihan, bayar di muka); null bila belum ada.
+        payment_overdue:
+          type: boolean
+        deliveries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Delivery'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        totals:
+          $ref: '#/components/schemas/OrderTotals'
+        payment_info:
+          description: Info bank dan QRIS; tidak dikirim selama `menunggu_konfirmasi` atau `dibatalkan`.
+          allOf:
+            - $ref: '#/components/schemas/Settings'
+        wa_link:
+          type: string
+          format: uri
+          nullable: true
+          description: |
+            Tombol Kabari Nabila: link `wa.me` ke `wa_number` di Pengaturan admin, teks berisi kode pesanan.
+            `null` bila `wa_number` belum diisi; frontend menyembunyikan tombolnya.
+          example: https://wa.me/6281200000000?text=Halo%20Kak%20Nabila%2C%20saya%20sudah%20pesan%20dengan%20kode%20MYM-7K2QF
+        created_at:
+          type: string
+          format: date-time
+    PublicReview:
+      type: object
+      required: [id, rating, created_at]
+      properties:
+        id:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
 
     # ---- Daftar masak -----------------------------------------------------
     KitchenResponse:
