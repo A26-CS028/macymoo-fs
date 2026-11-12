@@ -43,7 +43,7 @@ curl -X POST http://localhost:4010/orders \
   -H "Content-Type: application/json" \
   -d '{"customer_name":"Budi","phone":"081234567890","delivery_date":"2026-11-20","method":"ambil_sendiri","items":[{"menu_id":1,"qty":2,"option_ids":[1]},{"menu_id":2,"qty":1}],"agree_rules":true,"turnstile_token":"apa-saja"}'
 
-curl http://localhost:4010/orders/status/token-apa-saja
+curl http://localhost:4010/orders/status/3q9vXw1Zt8Lk0PfB6hYcR2sJmN4dUeAa
 
 # Admin: wajib ada cookie macymoo_admin (isinya bebas), tanpa itu 401
 curl http://localhost:4010/admin/orders -H "Cookie: macymoo_admin=tes"
@@ -72,7 +72,7 @@ Berguna untuk menguji tampilan gagal: 404 token salah, 409 transisi tidak sah, 4
 
 - Request divalidasi terhadap kontrak: body yang salah bentuk dibalas 400. Aturan bisnis tidak dicek
   (tanggal sebelum besok, tanggal tutup, menu habis, Turnstile, transisi status).
-- Tidak menyimpan apa pun: `POST /orders` selalu membalas contoh yang sama, dan token apa saja dianggap ada.
+- Tidak menyimpan apa pun: `POST /orders` selalu membalas contoh yang sama, dan token apa saja (minimal 32 karakter) dianggap ada.
 - Nilai cookie dan secret tidak diperiksa, hanya keberadaannya. Login tidak menyetel cookie sungguhan.
 - Endpoint tanpa `example` di kontrak membalas nilai contoh dari skema. Kalau butuh data yang masuk akal,
   tambahkan `example` di `docs/openapi.yaml`, jangan di folder ini.
