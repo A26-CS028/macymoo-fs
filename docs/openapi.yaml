@@ -2019,6 +2019,12 @@ components:
           format: uri
           nullable: true
           description: URL hasil `POST /admin/uploads` (`purpose = qris`).
+        wa_number:
+          type: string
+          nullable: true
+          pattern: '^62[0-9]{8,13}$'
+          description: Nomor WhatsApp Nabila untuk tombol Kabari Nabila (`wa.me`). Hanya angka, awalan 62. Boleh tampil di link publik. Kirim `null` untuk menghapus; bila `null`, tombol disembunyikan.
+          example: '6281200000000'
     ClosedDate:
       type: object
       required: [id, closed_date]
