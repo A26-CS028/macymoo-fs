@@ -206,7 +206,7 @@ paths:
                   balance_due: 107000
                   refund_due: 0
                   shipping_pending: false
-                wa_link: https://wa.me/6281234567890?text=Halo%20Kak%20Nabila%2C%20saya%20sudah%20pesan%20dengan%20kode%20MYM-7K2QF
+                wa_link: https://wa.me/6281200000000?text=Halo%20Kak%20Nabila%2C%20saya%20sudah%20pesan%20dengan%20kode%20MYM-7K2QF
                 created_at: '2026-11-12T10:15:00+07:00'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -2227,7 +2227,13 @@ components:
           allOf:
             - $ref: '#/components/schemas/Settings'
         wa_link:
-          $ref: '#/components/schemas/WaLink'
+          type: string
+          format: uri
+          nullable: true
+          description: |
+            Tombol Kabari Nabila: link `wa.me` ke `wa_number` di Pengaturan admin, teks berisi kode pesanan.
+            `null` bila `wa_number` belum diisi; frontend menyembunyikan tombolnya.
+          example: https://wa.me/6281200000000?text=Halo%20Kak%20Nabila%2C%20saya%20sudah%20pesan%20dengan%20kode%20MYM-7K2QF
         created_at:
           type: string
           format: date-time
