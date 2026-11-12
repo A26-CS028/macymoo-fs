@@ -1,0 +1,13 @@
+{
+  "name": "mock",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Server tiruan macymoo dari docs/openapi.yaml (Prism)",
+  "scripts": {
+    "start": "prism mock ../docs/openapi.yaml --port 4010",
+    "start:dynamic": "prism mock ../docs/openapi.yaml --port 4010 --dynamic"
+  },
+  "devDependencies": {
+    "@stoplight/prism-cli": "^5.16.0"
+  }
+}
