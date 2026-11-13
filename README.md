@@ -25,6 +25,10 @@ Repo Full Stack proyek macymoo (UMKM macyourmoo), Capstone Asah 2026, Tim A26-CS
 
 Keduanya di-deploy otomatis dari branch `main` lewat integrasi Git Vercel (root directory `frontend/` dan `backend/`).
 
+## Desain
+
+Mockup Figma: https://www.figma.com/design/vvH3jTbLEcR6hImzu1KNv3/macyourmoo?node-id=115-1647
+
 ## Kontrak API
 
 Kontrak API hanya diubah di `docs/openapi.yaml`. Setiap perubahan dikabari ke semua path (FS, AI, DS).
