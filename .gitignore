@@ -153,3 +153,6 @@ dist/
 __pycache__/
 .venv/
 .ipynb_checkpoints/
+
+.vercel
+.env.local
