@@ -809,18 +809,12 @@ paths:
         mengembalikan invoice yang sama. Ongkir ditampilkan per pengiriman.
         Ditolak (409, `ORDER_NOT_CONFIRMED`) untuk pesanan `menunggu_konfirmasi`.
 
-        **[Usulan Rama, belum ada di KF 9.8]** Query `revise=true` menerbitkan revisi baru
-        (nomor sama, `revision` + 1, tampil berakhiran `-v2`). Dibutuhkan kasus uji 5;
-        cara memicunya perlu disepakati sebelum minggu 3.
+        Permintaan ini tidak pernah menerbitkan revisi, jadi aman bila halaman dimuat ulang.
+        Revisi diterbitkan lewat `POST /admin/orders/{id}/invoice/revise`.
       security:
         - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/OrderId'
-        - name: revise
-          in: query
-          schema:
-            type: boolean
-            default: false
       responses:
         '200':
           description: File PDF
@@ -834,6 +828,33 @@ paths:
               schema:
                 type: string
                 format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /admin/orders/{id}/invoice/revise:
+    post:
+      tags: [Admin - Pesanan]
+      summary: Terbitkan revisi invoice
+      description: |
+        **[Usulan Rama, belum ada di KF 9.8]** Menerbitkan revisi baru (nomor sama,
+        `revision` + 1, tampil berakhiran `-v2`). Dibutuhkan kasus uji 5. Memakai `POST`
+        (bukan `GET`) karena mengubah data dan tidak boleh terpicu oleh pemuatan ulang halaman.
+        Ditolak (409, `ORDER_NOT_CONFIRMED`) untuk pesanan `menunggu_konfirmasi`.
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '201':
+          description: Revisi diterbitkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -2583,6 +2604,7 @@ components:
         items:
           type: array
           minItems: 1
+          maxItems: 50
           items:
             type: object
             required: [order_item_id, note]
@@ -2592,6 +2614,7 @@ components:
               note:
                 type: string
                 minLength: 1
+                maxLength: 500
           example:
             - order_item_id: 123
               note: saya alergi kacang, sausnya pisah
