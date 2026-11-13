@@ -62,8 +62,8 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
     description: Lokal (Express)
-  - url: https://GANTI-URL-BACKEND.vercel.app/api/v1
-    description: Produksi (ganti setelah deploy awal)
+  - url: https://macymoo-api.vercel.app/api/v1
+    description: Produksi (Vercel)
 
 tags:
   - name: Publik

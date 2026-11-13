@@ -16,6 +16,15 @@ Repo Full Stack proyek macymoo (UMKM macyourmoo), Capstone Asah 2026, Tim A26-CS
 - [macymoo-ai](https://github.com/A26-CS028/macymoo-ai): FastAPI (MooLabel, MooBot), pelatihan model
 - [macymoo-ds](https://github.com/A26-CS028/macymoo-ds): analisis data dan pembuat dataset MooLabel
 
+## Deploy
+
+| Bagian | URL |
+|---|---|
+| Frontend | https://macymoo-web.vercel.app |
+| Backend (API) | https://macymoo-api.vercel.app/api/v1 |
+
+Keduanya di-deploy otomatis dari branch `main` lewat integrasi Git Vercel (root directory `frontend/` dan `backend/`).
+
 ## Kontrak API
 
 Kontrak API hanya diubah di `docs/openapi.yaml`. Setiap perubahan dikabari ke semua path (FS, AI, DS).
