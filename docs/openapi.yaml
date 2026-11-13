@@ -12,8 +12,8 @@ info:
     ## Pembagian pengerjaan minggu 1
     | Bagian | Pemilik | Status |
     |---|---|---|
-    | Auth, Admin, Internal FastAPI, komponen bersama | Rama | Draf ini |
-    | Publik (`/menus`, `/orders`, `/moobot/chat`, dst.) | Darnell | Draf ini (penanda `PUBLIK` pada `paths`) |
+    | Auth, Admin, Internal FastAPI, komponen bersama | Rama | Disahkan 13 Nov 2026 |
+    | Publik (`/menus`, `/orders`, `/moobot/chat`, dst.) | Darnell | Disahkan 13 Nov 2026 (penanda `PUBLIK` pada `paths`) |
 
     Bagian publik memakai skema bersama (Menu, Delivery, OrderItem, OrderTotals, Error, dsb.)
     lewat `$ref`. Operasi publik wajib memakai `security: []`.
@@ -1276,9 +1276,8 @@ paths:
       tags: [Admin - Tambahan]
       summary: Daftar review untuk moderasi
       description: |
-        **[Usulan Rama, belum ada di KF 9.8]** Moderasi (`PATCH`) butuh daftar review,
-        sedangkan `GET /reviews` publik hanya menampilkan yang sudah lolos.
-        Hapus jika tim memutuskan lain.
+        Moderasi (`PATCH`) butuh daftar review, sedangkan `GET /reviews` publik hanya
+        menampilkan yang sudah lolos. Tambahan di luar daftar KF 9.8, disepakati tim (review PR #4).
       security:
         - cookieAuth: []
       parameters:
@@ -2223,7 +2222,7 @@ components:
                 type: integer
                 minimum: 1
                 maximum: 50
-                description: "**[Usulan Darnell]** Batas 50 porsi per baris; lebih dari itu lewat WhatsApp (MacLab)."
+                description: "Batas 50 porsi per baris (disepakati tim, review PR #5); lebih dari itu lewat WhatsApp (MacLab)."
               option_ids:
                 type: array
                 items:
