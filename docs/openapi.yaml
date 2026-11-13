@@ -1784,8 +1784,8 @@ components:
         - cancelled
         - completed
       description: |
-        **[Usulan Rama]** Daftar nilai `order_events.event_type`, penutup isu terbuka di catatan review ERD.
-        Jika disetujui, tambahkan CHECK yang sama di migrasi. Penolakan pesanan = `cancelled`
+        Daftar nilai `order_events.event_type`, sama dengan CHECK di `backend/migrations/001_init.sql`.
+        Penolakan pesanan = `cancelled`
         (dibedakan dari `from_status`). "Lewat batas bayar" tidak punya event (dihitung saat dibaca).
 
     # ---- Auth -------------------------------------------------------------
