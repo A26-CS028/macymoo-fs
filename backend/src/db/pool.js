@@ -7,7 +7,7 @@ const pool = new Pool({
   max: 3,
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 5000,
-  ssl: { rejectUnauthorized: false },
+  ssl: true, // sertifikat Neon diverifikasi supaya koneksi tidak bisa disadap
 });
 
 // Tanpa ini, koneksi idle yang diputus Neon membuat proses crash

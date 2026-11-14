@@ -1,12 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
 const { frontendOrigin } = require('./config/env');
 const routes = require('./routes');
 
 const app = express();
 
 app.set('trust proxy', 1); // di balik proxy Vercel
+app.use(helmet()); // header keamanan, sekaligus menghapus X-Powered-By
 app.use(cors({ origin: frontendOrigin, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
