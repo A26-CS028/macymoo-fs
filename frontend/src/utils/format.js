@@ -4,5 +4,7 @@ export function rupiah(n) {
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0,
-  }).format(n);
+  })
+    .format(n)
+    .replace(/\s/g, ''); // "Rp 35.000" -> "Rp35.000" sesuai desain Figma
 }

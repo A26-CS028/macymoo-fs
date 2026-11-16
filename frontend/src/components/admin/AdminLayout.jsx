@@ -8,7 +8,7 @@ export default function AdminLayout() {
   const { admin, setAdmin } = useAuth()
 
   if (admin === undefined) {
-    return <p className="p-6 text-sm text-[#5b5470]" role="status">Memeriksa sesi…</p>
+    return <p className="p-6 text-sm text-abu" role="status">Memeriksa sesi…</p>
   }
   if (!admin) return <Navigate to="/dapur" replace />
 
@@ -18,7 +18,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea] text-[#1e0a4a]">
+    <div className="min-h-screen bg-krem-field text-ungu-gelap">
       <header className="flex items-center justify-between bg-white px-4 py-3 shadow-sm">
         <span className="font-bold">Macyourmoo</span>
         <div className="flex items-center gap-3 text-sm">
@@ -26,7 +26,7 @@ export default function AdminLayout() {
           <button
             type="button"
             onClick={logout}
-            className="rounded-lg border border-[#d9d3e8] px-3 py-1.5 font-semibold hover:bg-[#f4f1ea]"
+            className="rounded-lg border border-abu-label px-3 py-1.5 font-semibold hover:bg-krem-field"
           >
             Keluar
           </button>
