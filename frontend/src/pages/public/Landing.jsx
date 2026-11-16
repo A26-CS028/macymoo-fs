@@ -131,7 +131,12 @@ export default function Landing() {
   function loadMenus() {
     setStatus('loading')
     api('/menus')
-      .then((res) => { setMenus(res.menus); setStatus('ready') })
+      .then((res) => {
+        // Respons di luar kontrak ({ menus: [...] }) diperlakukan sebagai gagal, bukan dibiarkan crash
+        if (!Array.isArray(res?.menus)) throw new Error('Format respons /menus tidak sesuai kontrak')
+        setMenus(res.menus)
+        setStatus('ready')
+      })
       .catch(() => setStatus('error'))
   }
   useEffect(loadMenus, [])
@@ -174,7 +179,10 @@ export default function Landing() {
                 <button type="button" onClick={loadMenus} className="rounded-[10px] bg-ungu-gelap px-4 py-2 text-white">Coba lagi</button>
               </div>
             )}
-            {status === 'ready' && (
+            {status === 'ready' && !menus.length && (
+              <p role="status" className="mt-10 text-base font-bold">Belum ada menu yang tersedia hari ini.</p>
+            )}
+            {status === 'ready' && menus.length > 0 && (
               <div className="mx-auto mt-[47px] grid max-w-[430px] gap-12 lg:mt-7 lg:max-w-[640px] lg:gap-6 min-[1440px]:max-w-none min-[1440px]:grid-cols-2 min-[1440px]:gap-x-8">
                 {menus.map((menu, i) => (
                   <MenuCard
