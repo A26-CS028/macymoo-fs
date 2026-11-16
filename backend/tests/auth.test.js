@@ -2,7 +2,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
 
-process.env.JWT_SECRET = 'rahasia-uji';
+process.env.JWT_SECRET = 'rahasia-uji-minimal-32-karakter-xx';
+process.env.DATABASE_URL = 'postgres://uji@localhost/uji';
 const jwt = require('jsonwebtoken');
 const { requireAdmin, COOKIE_NAME } = require('../src/middleware/auth');
 const { errorHandler } = require('../src/middleware/errorHandler');
@@ -36,7 +37,7 @@ test('token dengan secret lain ditolak 401', () => {
 });
 
 test('token kedaluwarsa ditolak 401', () => {
-  const token = jwt.sign({ sub: '1', username: 'nabila', exp: Math.floor(Date.now() / 1000) - 60 }, 'rahasia-uji');
+  const token = jwt.sign({ sub: '1', username: 'nabila', exp: Math.floor(Date.now() / 1000) - 60 }, process.env.JWT_SECRET);
   const { res, passed } = run({ [COOKIE_NAME]: token });
   assert.strictEqual(passed, false);
   assert.strictEqual(res.statusCode, 401);
@@ -49,7 +50,7 @@ test('token "none" (tanpa tanda tangan) ditolak 401', () => {
 });
 
 test('token sah lolos dan req.admin terisi', () => {
-  const token = jwt.sign({ sub: '7', username: 'nabila' }, 'rahasia-uji', { expiresIn: '7d' });
+  const token = jwt.sign({ sub: '7', username: 'nabila' }, process.env.JWT_SECRET, { expiresIn: '7d' });
   const { req, passed } = run({ [COOKIE_NAME]: token });
   assert.strictEqual(passed, true);
   assert.deepStrictEqual(req.admin, { id: 7, username: 'nabila' });
