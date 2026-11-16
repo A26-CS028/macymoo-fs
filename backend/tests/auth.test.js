@@ -1,0 +1,67 @@
+// Uji middleware requireAdmin dan format error, tanpa database.
+const { test } = require('node:test');
+const assert = require('node:assert');
+
+process.env.JWT_SECRET = 'rahasia-uji';
+const jwt = require('jsonwebtoken');
+const { requireAdmin, COOKIE_NAME } = require('../src/middleware/auth');
+const { errorHandler } = require('../src/middleware/errorHandler');
+
+// Jalankan requireAdmin, lalu teruskan error (jika ada) ke errorHandler seperti Express.
+function run(cookies) {
+  const req = { cookies };
+  const res = {
+    statusCode: 200,
+    status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return this; },
+  };
+  let passed = false;
+  requireAdmin(req, res, (err) => (err ? errorHandler(err, req, res, () => {}) : (passed = true)));
+  return { req, res, passed };
+}
+
+test('tanpa cookie ditolak 401 dengan format error kontrak', () => {
+  const { res, passed } = run({});
+  assert.strictEqual(passed, false);
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.error.code, 'UNAUTHORIZED');
+  assert.ok(res.body.error.message);
+});
+
+test('token dengan secret lain ditolak 401', () => {
+  const token = jwt.sign({ sub: '1', username: 'nabila' }, 'secret-palsu');
+  const { res, passed } = run({ [COOKIE_NAME]: token });
+  assert.strictEqual(passed, false);
+  assert.strictEqual(res.statusCode, 401);
+});
+
+test('token kedaluwarsa ditolak 401', () => {
+  const token = jwt.sign({ sub: '1', username: 'nabila', exp: Math.floor(Date.now() / 1000) - 60 }, 'rahasia-uji');
+  const { res, passed } = run({ [COOKIE_NAME]: token });
+  assert.strictEqual(passed, false);
+  assert.strictEqual(res.statusCode, 401);
+});
+
+test('token "none" (tanpa tanda tangan) ditolak 401', () => {
+  const token = jwt.sign({ sub: '1', username: 'nabila' }, null, { algorithm: 'none' });
+  const { passed } = run({ [COOKIE_NAME]: token });
+  assert.strictEqual(passed, false);
+});
+
+test('token sah lolos dan req.admin terisi', () => {
+  const token = jwt.sign({ sub: '7', username: 'nabila' }, 'rahasia-uji', { expiresIn: '7d' });
+  const { req, passed } = run({ [COOKIE_NAME]: token });
+  assert.strictEqual(passed, true);
+  assert.deepStrictEqual(req.admin, { id: 7, username: 'nabila' });
+});
+
+test('error 500 tidak membocorkan pesan internal', () => {
+  const res = { status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; } };
+  const log = console.error;
+  console.error = () => {};
+  errorHandler(new Error('password=rahasia di query'), {}, res, () => {});
+  console.error = log;
+  assert.strictEqual(res.statusCode, 500);
+  assert.strictEqual(res.body.error.code, 'INTERNAL_ERROR');
+  assert.ok(!res.body.error.message.includes('rahasia'));
+});

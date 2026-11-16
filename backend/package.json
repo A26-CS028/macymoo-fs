@@ -4,13 +4,17 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node --env-file=.env src/server.js",
-    "test": "node --test tests/"
+    "test": "node --test tests/",
+    "create-admin": "node --env-file=.env scripts/create-admin.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "helmet": "^8.3.0",
+    "joi": "^18.3.2",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.12.0"
   }
 }
