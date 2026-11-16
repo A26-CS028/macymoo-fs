@@ -9,8 +9,14 @@ export async function api(path, { headers, ...options } = {}) {
     headers: { ...(isJson && { 'Content-Type': 'application/json' }), ...headers },
   });
   if (!res.ok) {
+    // Format error kontrak: { error: { code, message, details } }
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Permintaan gagal (${res.status})`);
+    const err = new Error(body.error?.message || `Permintaan gagal (${res.status})`);
+    err.status = res.status;
+    err.code = body.error?.code;
+    err.details = body.error?.details;
+    err.retryAfter = Number(res.headers.get('Retry-After')) || null; // detik, untuk 429
+    throw err;
   }
   return res.status === 204 ? null : res.json();
 }
