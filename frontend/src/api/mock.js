@@ -54,7 +54,17 @@ function createOrder(body) {
   }
 }
 
+// Contoh ulasan dari desain Figma (hanya untuk dev, tidak ikut ke produksi)
+const REVIEWS = [
+  [5, 'Saus kejunya beneran lumer, ayamnya juicy. Pesan lagi minggu depan!', 1],
+  [5, 'Brokolinya masih renyah dan dada ayamnya nggak kering. Pas buat makan siang.', 3],
+  [5, 'Gampang dibawa ke kampus, kejunya tetap creamy walau sudah dingin.', 4],
+  [4, 'Pesan buat acara kantor, Nabila cepat banget konfirmasi ongkirnya.', 6],
+  [5, 'Level pedasnya pas. Porsinya besar, kenyang sampai sore.', 9],
+].map(([rating, comment, hariLalu], i) => ({ id: i + 1, rating, comment, created_at: new Date(Date.now() - hariLalu * 864e5).toISOString() }))
+
 const ROUTES = {
+  'GET /reviews': () => ({ reviews: REVIEWS }),
   'GET /menus': () => ({ menus: MENUS }),
   'GET /closed-dates': () => ({ closed_dates: [{ id: 1, closed_date: ymd(3) }, { id: 2, closed_date: ymd(5) }] }),
   'POST /orders': createOrder,

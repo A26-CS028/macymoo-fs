@@ -8,6 +8,7 @@ import { menuPhoto, fallbackToLocal } from '../../utils/menuPhoto'
 import Navbar from '../../components/Navbar'
 import MenuCard from '../../components/MenuCard'
 import Footer from '../../components/Footer'
+import Reviews from '../../components/Reviews'
 import heroDesktop from '../../assets/landing/hero-desktop.webp'
 import heroMobile from '../../assets/landing/hero-mobile.webp'
 import menuDesktop from '../../assets/landing/menu-desktop.webp'
@@ -178,6 +179,7 @@ export default function Landing() {
       <Navbar />
       <main>
         <Hero menus={menus} />
+        <Reviews />
 
         <section id="menu" className="relative scroll-mt-4 overflow-hidden bg-kuning px-5 pb-10 pt-6 lg:px-16 lg:pb-[88px] lg:pt-[72px]">
           <picture>

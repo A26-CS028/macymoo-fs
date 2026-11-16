@@ -25,6 +25,8 @@ export default {
           '100%': { transform: 'translateY(-120px)' },
         },
         muncul: { from: { opacity: '0' }, to: { opacity: '1' } },
+        // Pita ulasan: daftar diulang dua kali, geser setengah lebar lalu mulai lagi
+        ulasan: { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(-50%)' } },
         // Figma "Sorotan Menu" Gerak 1-3: foto samping naik-turun, foto utama membesar-mengecil
         melayang: { '0%, 100%': { transform: 'translateY(0)' }, '33%': { transform: 'translateY(6px)' }, '66%': { transform: 'translateY(2px)' } },
         bernapas: { '0%, 100%': { transform: 'scale(1)' }, '33%': { transform: 'scale(0.97)' }, '66%': { transform: 'scale(1.017)' } },
@@ -32,6 +34,7 @@ export default {
       animation: {
         'teks-putar': 'teks-putar 12s ease-in-out infinite',
         muncul: 'muncul 500ms ease-out',
+        ulasan: 'ulasan 30s linear infinite',
         melayang: 'melayang 3.5s ease-in-out infinite',
         bernapas: 'bernapas 3.5s ease-in-out infinite',
       },
