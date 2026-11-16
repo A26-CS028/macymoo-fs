@@ -2,6 +2,12 @@
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1').replace(/\/$/, '');
 
 export async function api(path, options = {}) {
+  // Mock hanya saat development; di build produksi import.meta.env.DEV = false sehingga blok ini dibuang.
+  if (import.meta.env.DEV && import.meta.env.VITE_MOCK !== 'false') {
+    const { mockApi } = await import('./mock.js');
+    const data = await mockApi(path, options);
+    if (data !== undefined) return data;
+  }
   const res = await fetch(`${BASE_URL}${path}`, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
