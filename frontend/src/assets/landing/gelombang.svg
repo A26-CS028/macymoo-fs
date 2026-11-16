@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1440" height="680" viewBox="0 0 1440 680" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Gelombang" clip-path="url(#clip0_0_446)">
+<path id="Vector" d="M0 622C288 658 547.2 608 806.4 574C1065.6 540 1267.2 528 1440 560V680H0V622Z" fill="#4D00C9"/>
+<path id="Vector_2" d="M0 648C316.8 680 604.8 638 864 606C1123.2 574 1296 566 1440 592V680H0V648Z" fill="#1E054D"/>
+</g>
+<defs>
+<clipPath id="clip0_0_446">
+<rect width="1440" height="680" fill="white"/>
+</clipPath>
+</defs>
+</svg>

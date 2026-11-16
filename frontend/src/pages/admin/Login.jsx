@@ -50,14 +50,14 @@ export default function Login() {
 
   const mmss = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`
   const inputClass =
-    'w-full rounded-lg bg-[#f4f1ea] px-4 py-3 text-[#1e0a4a] outline-none focus:ring-2 focus:ring-[#5300cc]'
+    'w-full rounded-lg bg-krem-field px-4 py-3 text-ungu-gelap outline-none focus:ring-2 focus:ring-ungu'
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#1e0a4a] text-[#1e0a4a] lg:flex-row lg:gap-8 lg:bg-[#f4f1ea] lg:p-5">
+    <div className="flex min-h-screen flex-col bg-ungu-gelap text-ungu-gelap lg:flex-row lg:gap-8 lg:bg-krem-field lg:p-5">
       <meta name="robots" content="noindex, nofollow" />
       <title>Masuk Admin · Macyourmoo</title>
 
-      <section className="bg-[#1e0a4a] px-6 pb-12 pt-10 text-white lg:flex lg:w-[54%] lg:flex-col lg:rounded-3xl lg:p-14">
+      <section className="bg-ungu-gelap px-6 pb-12 pt-10 text-white lg:flex lg:w-[54%] lg:flex-col lg:rounded-3xl lg:p-14">
         <p className="text-lg font-bold">Macyourmoo</p>
         <div className="mt-6 lg:my-auto">
           <h1 className="text-4xl font-bold lg:text-6xl">Dapur Nabila</h1>
@@ -74,7 +74,7 @@ export default function Login() {
           noValidate
         >
           <h2 className="text-2xl font-bold">Masuk Admin</h2>
-          <p className="mt-1 text-sm text-[#5b5470]">Khusus Nabila · sesi aman dengan cookie httpOnly</p>
+          <p className="mt-1 text-sm text-abu">Khusus Nabila · sesi aman dengan cookie httpOnly</p>
 
           <label htmlFor="username" className="mt-6 block text-sm font-medium">Username</label>
           <input
@@ -103,7 +103,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-3 text-sm text-[#5b5470]"
+              className="absolute inset-y-0 right-3 text-sm text-abu"
               aria-pressed={showPassword}
             >
               {showPassword ? 'Sembunyikan' : 'Lihat'}
@@ -117,13 +117,13 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading || locked || !username || !password}
-            className="mt-3 w-full rounded-lg bg-[#5300cc] py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-3 w-full rounded-lg bg-ungu py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? 'Memeriksa…' : 'Masuk'}
           </button>
 
           {locked && (
-            <div role="status" className="mt-5 rounded-lg bg-[#f4f1ea] px-4 py-3 text-sm lg:bg-transparent lg:px-0">
+            <div role="status" className="mt-5 rounded-lg bg-krem-field px-4 py-3 text-sm lg:bg-transparent lg:px-0">
               <p className="font-semibold">Terlalu banyak percobaan</p>
               <p>Coba lagi dalam {mmss}. Batas 5 percobaan per 15 menit.</p>
             </div>
