@@ -1,22 +1,26 @@
-const { turnstileSecret } = require('../config/env');
+const { turnstileSecretKey } = require('../config/env');
 const { httpError } = require('./errorHandler');
 
 const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+const failed = () =>
+  httpError(400, 'TURNSTILE_FAILED', 'Verifikasi keamanan gagal. Muat ulang halaman lalu coba lagi.');
 
-// Verifikasi token Cloudflare Turnstile (req.body.turnstile_token) di server. Token sekali pakai.
-// Pasang setelah validate(): token baru dihabiskan bila isi form sudah valid.
-module.exports = async function turnstile(req, res, next) {
+// Dipasang setelah validate(), jadi req.body.turnstile_token sudah pasti ada.
+async function verifyTurnstile(req, res, next) {
   try {
-    if (!turnstileSecret) throw new Error('TURNSTILE_SECRET_KEY belum diisi');
-    const body = new URLSearchParams({ secret: turnstileSecret, response: req.body.turnstile_token || '' });
-    if (req.ip) body.set('remoteip', req.ip);
-    const result = await fetch(VERIFY_URL, { method: 'POST', body, signal: AbortSignal.timeout(5000) }).then((r) => r.json());
-    if (!result.success) {
-      return next(httpError(400, 'TURNSTILE_FAILED', 'Verifikasi keamanan gagal. Muat ulang verifikasi lalu coba lagi.'));
-    }
-    delete req.body.turnstile_token;
+    const params = new URLSearchParams({
+      secret: turnstileSecretKey || '',
+      response: req.body.turnstile_token,
+    });
+    if (req.ip) params.append('remoteip', req.ip);
+
+    const r = await fetch(VERIFY_URL, { method: 'POST', body: params, signal: AbortSignal.timeout(5000) });
+    const data = await r.json();
+    if (!data.success) return next(failed());
     next();
   } catch (err) {
-    next(err);
+    next(failed());
   }
-};
+}
+
+module.exports = verifyTurnstile;

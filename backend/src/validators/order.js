@@ -1,61 +1,77 @@
 const Joi = require('joi');
-const { todayJakarta, addDays } = require('../utils/date');
+const { isValidDate, tomorrowJakarta } = require('../utils/date');
 
-// Skema POST /orders (openapi: PublicOrderCreate). Harga tidak diterima dari browser.
-// Pesan error berbahasa Indonesia supaya bisa langsung ditampilkan di form.
-
-const phone = Joi.string()
-  .trim()
-  .custom((value, helpers) => {
-    const digits = value.replace(/[\s-]/g, '');
-    // Nomor HP Indonesia: diawali 08, total 10-13 digit (sesuai petunjuk di form)
-    if (!/^08\d{8,11}$/.test(digits)) return helpers.error('phone.invalid');
-    return digits;
-  })
-  .messages({ 'phone.invalid': 'Nomor WhatsApp harus diawali 08 dan berisi 10-13 angka' });
+const messages = {
+  'any.required': '{#label} wajib diisi',
+  'string.base': '{#label} harus berupa teks',
+  'string.empty': '{#label} wajib diisi',
+  'string.min': '{#label} minimal {#limit} karakter',
+  'string.max': '{#label} maksimal {#limit} karakter',
+  'string.pattern.base': '{#label} tidak valid',
+  'number.base': '{#label} harus berupa angka',
+  'number.integer': '{#label} harus bilangan bulat',
+  'number.positive': '{#label} tidak valid',
+  'number.min': '{#label} minimal {#limit}',
+  'number.max': '{#label} maksimal {#limit}',
+  'array.base': '{#label} tidak valid',
+  'array.min': '{#label} minimal {#limit} isi',
+  'boolean.base': '{#label} tidak valid',
+  'any.only': '{#label} tidak valid',
+};
 
 const deliveryDate = Joi.string()
-  .pattern(/^\d{4}-\d{2}-\d{2}$/)
+  .required()
+  .label('Tanggal kirim')
   .custom((value, helpers) => {
-    // Paling cepat besok (H-1), dihitung dengan zona Asia/Jakarta
-    if (value < addDays(todayJakarta(), 1)) return helpers.error('date.tooEarly');
-    if (value > addDays(todayJakarta(), 60)) return helpers.error('date.tooFar');
+    if (!isValidDate(value)) return helpers.error('date.invalid');
+    if (value < tomorrowJakarta()) return helpers.error('date.tooEarly');
     return value;
   })
   .messages({
-    'string.pattern.base': 'Format tanggal kirim harus YYYY-MM-DD',
-    'date.tooEarly': 'Tanggal kirim paling cepat besok. Untuk hari ini, hubungi Nabila lewat WhatsApp',
-    'date.tooFar': 'Tanggal kirim paling lambat 60 hari dari sekarang',
+    'date.invalid': 'Tanggal kirim tidak valid (format YYYY-MM-DD)',
+    'date.tooEarly': 'Tanggal kirim paling cepat besok',
   });
 
-const item = Joi.object({
-  menu_id: Joi.number().integer().positive().required(),
-  qty: Joi.number().integer().min(1).max(50).required().messages({
-    'number.min': 'Jumlah porsi minimal 1',
-    'number.max': 'Jumlah porsi maksimal 50 per menu; pesanan lebih besar lewat WhatsApp',
-  }),
-  option_ids: Joi.array().items(Joi.number().integer().positive()).unique().default([]),
-  note: Joi.string().trim().max(500).allow(''),
-});
+const qtyMessage = 'Jumlah porsi harus bilangan bulat 1 sampai 50';
 
-const orderSchema = Joi.object({
-  customer_name: Joi.string().trim().min(1).max(100).required().messages({ 'string.empty': 'Nama wajib diisi' }),
-  phone: phone.required(),
-  delivery_date: deliveryDate.required(),
-  method: Joi.string().valid('antar_nabila', 'ambil_sendiri').required(),
+const publicOrderCreate = Joi.object({
+  customer_name: Joi.string().trim().min(1).max(100).required().label('Nama'),
+  phone: Joi.string()
+    .trim()
+    .pattern(/^(?:\+62|62|0)8[0-9]{8,12}$/)
+    .required()
+    .label('Nomor HP')
+    .messages({ 'string.pattern.base': 'Nomor HP tidak valid. Contoh: 081234567890' }),
+  delivery_date: deliveryDate,
+  method: Joi.string().valid('antar_nabila', 'ambil_sendiri').required().label('Cara antar'),
   address: Joi.when('method', {
     is: 'antar_nabila',
-    then: Joi.string().trim().min(1).max(300).required().messages({ 'string.empty': 'Alamat wajib diisi bila diantar Nabila' }),
-    otherwise: Joi.any().strip(), // Ambil Sendiri: alamat tidak disimpan (data seperlunya)
+    then: Joi.string().trim().min(1).max(300).required().label('Alamat'),
+    otherwise: Joi.any().strip(), // Ambil Sendiri: alamat diabaikan, tidak disimpan
   }),
-  items: Joi.array().items(item).min(1).required().messages({ 'array.min': 'Pilih minimal 1 menu' }),
-  agree_rules: Joi.boolean().valid(true).required().messages({
-    'any.only': 'Setujui Aturan Pemesanan dan Kebijakan Privasi dulu',
-    'any.required': 'Setujui Aturan Pemesanan dan Kebijakan Privasi dulu',
+  items: Joi.array()
+    .min(1)
+    .items(
+      Joi.object({
+        menu_id: Joi.number().integer().positive().required().label('Menu'),
+        qty: Joi.number().integer().min(1).max(50).required().label('Jumlah porsi').messages({
+          'number.base': qtyMessage,
+          'number.integer': qtyMessage,
+          'number.min': qtyMessage,
+          'number.max': qtyMessage,
+        }),
+        option_ids: Joi.array().items(Joi.number().integer().positive()).default([]).label('Opsi'),
+        note: Joi.string().trim().max(500).allow('').label('Catatan'),
+      })
+    )
+    .required()
+    .label('Item pesanan'),
+  agree_rules: Joi.boolean().valid(true).required().label('Persetujuan aturan').messages({
+    'any.only': 'Anda harus menyetujui Aturan Pemesanan',
+    'any.required': 'Anda harus menyetujui Aturan Pemesanan',
   }),
-  turnstile_token: Joi.string().min(1).required().messages({ 'any.required': 'Verifikasi Turnstile belum selesai' }),
-  // Honeypot: field tersembunyi; bot yang mengisinya ditolak
-  website: Joi.string().allow('').max(0).messages({ 'string.max': 'Permintaan ditolak' }),
-});
+  turnstile_token: Joi.string().min(1).required().label('Verifikasi keamanan'),
+  website: Joi.string().valid('').label('website').messages({ 'any.only': 'Permintaan tidak valid' }), // honeypot
+}).prefs({ errors: { wrap: { label: false } }, messages });
 
-module.exports = { orderSchema };
+module.exports = { publicOrderCreate };

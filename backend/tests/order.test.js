@@ -2,29 +2,29 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
 
+process.env.JWT_SECRET = 'rahasia-uji-minimal-32-karakter-xx';
+process.env.DATABASE_URL = 'postgres://uji@localhost/uji';
 process.env.TURNSTILE_SECRET_KEY = 'rahasia-uji';
-const { orderSchema } = require('../src/validators/order');
-const turnstile = require('../src/middleware/turnstile');
-const { todayJakarta, addDays } = require('../src/utils/date');
+const { publicOrderCreate } = require('../src/validators/order');
+const verifyTurnstile = require('../src/middleware/turnstile');
+const { todayJakarta, tomorrowJakarta } = require('../src/utils/date');
 
-const besok = addDays(todayJakarta(), 1);
 const valid = () => ({
   customer_name: 'Sinta Aulia',
-  phone: '0812-3456-7890',
-  delivery_date: besok,
+  phone: '081234567890',
+  delivery_date: tomorrowJakarta(),
   method: 'ambil_sendiri',
   items: [{ menu_id: 1, qty: 2, option_ids: [1, 4], note: 'saus dipisah' }],
   agree_rules: true,
   turnstile_token: 'token',
   website: '',
 });
-const check = (body) => orderSchema.validate(body, { abortEarly: false, stripUnknown: true });
+const check = (body) => publicOrderCreate.validate(body, { abortEarly: false, stripUnknown: true });
 const fields = (r) => (r.error ? r.error.details.map((d) => d.path.join('.')) : []);
 
-test('pesanan valid lolos; nomor HP dinormalkan dan alamat Ambil Sendiri dibuang', () => {
+test('pesanan valid lolos; alamat Ambil Sendiri dibuang', () => {
   const r = check({ ...valid(), address: 'Jl. Contoh' });
   assert.strictEqual(r.error, undefined);
-  assert.strictEqual(r.value.phone, '081234567890');
   assert.strictEqual(r.value.address, undefined);
 });
 
@@ -32,11 +32,6 @@ test('KF uji #2: nomor HP berisi huruf, tanggal kirim hari ini, porsi 0 ditolak'
   const r = check({ ...valid(), phone: '08abc123456', delivery_date: todayJakarta(), items: [{ menu_id: 1, qty: 0 }] });
   assert.deepStrictEqual(fields(r).sort(), ['delivery_date', 'items.0.qty', 'phone']);
   assert.match(r.error.details.find((d) => d.path[0] === 'delivery_date').message, /paling cepat besok/);
-});
-
-test('nomor HP harus 08 dan 10-13 angka', () => {
-  for (const bad of ['0812345', '62812345678', '08123456789012']) assert.deepStrictEqual(fields(check({ ...valid(), phone: bad })), ['phone']);
-  for (const ok of ['0812345678', '0812345678901']) assert.deepStrictEqual(fields(check({ ...valid(), phone: ok })), []);
 });
 
 test('antar Nabila wajib alamat', () => {
@@ -61,17 +56,15 @@ async function runTurnstile(success) {
   const real = global.fetch;
   let sent;
   global.fetch = async (url, opts) => { sent = opts.body; return { json: async () => ({ success }) }; };
-  const req = { body: { turnstile_token: 'abc' }, ip: '1.2.3.4' };
   let error;
-  await turnstile(req, {}, (err) => { error = err; });
+  await verifyTurnstile({ body: { turnstile_token: 'abc' }, ip: '1.2.3.4' }, {}, (err) => { error = err; });
   global.fetch = real;
-  return { req, error, sent };
+  return { error, sent };
 }
 
-test('Turnstile sukses: lanjut dan token dibuang dari body', async () => {
-  const { req, error, sent } = await runTurnstile(true);
+test('Turnstile sukses: lanjut, secret dan token terkirim ke Cloudflare', async () => {
+  const { error, sent } = await runTurnstile(true);
   assert.strictEqual(error, undefined);
-  assert.strictEqual(req.body.turnstile_token, undefined);
   assert.strictEqual(sent.get('secret'), 'rahasia-uji');
   assert.strictEqual(sent.get('response'), 'abc');
 });

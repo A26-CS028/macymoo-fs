@@ -1,15 +1,23 @@
-// Tanggal dalam zona Asia/Jakarta (KF 9.8), format YYYY-MM-DD.
-const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' });
+const TZ = 'Asia/Jakarta';
 
-function todayJakarta(now = new Date()) {
-  return fmt.format(now);
+function todayJakarta() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date()); // YYYY-MM-DD
 }
 
-// Tambah hari ke tanggal YYYY-MM-DD (dihitung di UTC supaya tidak terpengaruh zona server).
-function addDays(ymd, days) {
-  const d = new Date(`${ymd}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
-module.exports = { todayJakarta, addDays };
+function tomorrowJakarta() {
+  return addDays(todayJakarta(), 1);
+}
+
+function isValidDate(s) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
+module.exports = { todayJakarta, tomorrowJakarta, addDays, isValidDate };

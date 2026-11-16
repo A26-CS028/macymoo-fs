@@ -95,7 +95,7 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
     const note = form.note.trim()
     const body = {
       customer_name: form.customer_name.trim(),
-      phone: form.phone,
+      phone: form.phone.replace(/[\s-]/g, ''), // backend hanya menerima angka (boleh diawali +62)
       delivery_date: form.delivery_date,
       method: form.method,
       ...(antar && { address: form.address.trim() }),
