@@ -15,12 +15,14 @@ function httpError(status, code, message, details) {
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
-  if (status >= 500) console.error(err);
+  // Error tak terduga (tanpa kode) dicatat dan pesannya disembunyikan; error yang sengaja dibuat (httpError) ditampilkan
+  const unexpected = status >= 500 && !err.code;
+  if (unexpected) console.error(err);
   res.status(status).json({
     error: {
       code: err.code || DEFAULT_CODES[status] || 'INTERNAL_ERROR',
       // pesan error server tidak dikirim ke klien supaya detail internal tidak bocor
-      message: status >= 500 ? 'Terjadi kesalahan di server' : err.message,
+      message: unexpected ? 'Terjadi kesalahan di server' : err.message,
       ...(err.details && { details: err.details }),
     },
   });

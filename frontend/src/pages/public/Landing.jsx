@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useSessionState } from '../../hooks/useSessionState'
+import OrderForm from '../../components/OrderForm'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
 import { menuPhoto, fallbackToLocal } from '../../utils/menuPhoto'
@@ -40,21 +43,32 @@ function Dots({ count, active, onPick }) {
   )
 }
 
-function Sorotan({ menus, active, setActive, slots, className }) {
-  const shown = menus.slice(0, 4).map((_, i) => menus[(active + i) % menus.length])
-  return (
-    <div className={className}>
-      {shown.map((menu, i) => (
-        <div key={i} className={`absolute flex items-center justify-center ${slots[i].box}`}>
-          <button type="button" onClick={() => setActive(menus.indexOf(menu))} tabIndex={i === 0 ? -1 : 0}
-            aria-label={i === 0 ? undefined : `Lihat ${menu.name}`} className={`flex-none ${slots[i].img}`}>
-            <img key={menu.id} src={menuPhoto(menu)} onError={fallbackToLocal(menu)} alt={i === 0 ? `Foto ${menu.name}` : ''}
-              className={`size-full animate-muncul object-contain ${i === 0 ? 'drop-shadow-[0_30px_40px_rgba(30,5,77,0.28)]' : ''}`} />
+// Tiap menu punya elemen tetap (key = id) yang berpindah slot saat menu aktif berganti,
+// sehingga posisi, ukuran, rotasi, dan blur beranimasi seperti Smart Animate di prototipe Figma.
+// Di dalam slot, foto "melayang" (Figma: Gerak 1-3): foto samping naik-turun 6px, foto utama membesar-mengecil.
+function Sorotan({ menus, active, setActive, slots }) {
+  const n = menus.length
+  return menus.map((menu, i) => {
+    const slot = (i - active + n) % n
+    const s = slots[Math.min(slot, 3)]
+    const main = slot === 0
+    return (
+      <div key={menu.id}
+        className={`absolute flex items-center justify-center transition-all duration-700 ease-in-out ${s.box} ${
+          main ? 'z-10' : ''} ${slot > 3 ? 'opacity-0' : ''}`}>
+        <div className={`flex size-full items-center justify-center ${main ? 'animate-bernapas' : 'animate-melayang'}`}
+          style={{ animationDelay: `${-slot * 0.6}s` }}>
+          <button type="button" onClick={() => setActive(i)} tabIndex={main ? -1 : 0}
+            aria-label={main ? undefined : `Lihat ${menu.name}`}
+            className={`flex-none transition-all duration-700 ease-in-out ${s.img}`}>
+            <img src={menuPhoto(menu)} onError={fallbackToLocal(menu)} alt={main ? `Foto ${menu.name}` : ''}
+              className={`size-full object-contain transition-[filter] duration-700 ${
+                main ? 'drop-shadow-[0_30px_40px_rgba(30,5,77,0.28)]' : ''}`} />
           </button>
         </div>
-      ))}
-    </div>
-  )
+      </div>
+    )
+  })
 }
 
 function Hero({ menus }) {
@@ -102,8 +116,10 @@ function Hero({ menus }) {
             <div className="relative mx-auto mt-4 h-[390px] w-[390px] shrink-0 lg:hidden">
               <Sorotan menus={menus} active={active} setActive={setActive} slots={SLOT_MOBILE} />
               <div className="absolute inset-x-0 top-[290px] flex flex-col items-center gap-1.5 text-center">
-                <p className="font-lilita text-[30px] leading-[1.15] text-ungu-gelap">{current.name}</p>
-                <p className="text-base font-extrabold text-ungu">{rupiah(current.price)}</p>
+                <div key={current.id} className="flex animate-muncul flex-col items-center gap-1.5">
+                  <p className="font-lilita text-[30px] leading-[1.15] text-ungu-gelap">{current.name}</p>
+                  <p className="text-base font-extrabold text-ungu">{rupiah(current.price)}</p>
+                </div>
                 <div className="mt-2"><Dots count={Math.min(menus.length, 4)} active={active} onPick={setActive} /></div>
               </div>
             </div>
@@ -111,8 +127,10 @@ function Hero({ menus }) {
             <div className="relative hidden h-[552px] w-[760px] shrink-0 lg:block lg:[zoom:0.5] xl:[zoom:0.8] min-[1440px]:[zoom:1]">
               <Sorotan menus={menus} active={active} setActive={setActive} slots={SLOT_DESKTOP} />
               <div className="absolute left-[566px] top-[340px] flex flex-col gap-1.5">
-                <p className="font-lilita text-[38px] leading-[1.15] text-ungu-gelap">{current.name}</p>
-                <p className="text-lg font-extrabold text-ungu">{rupiah(current.price)}</p>
+                <div key={current.id} className="flex animate-muncul flex-col gap-1.5">
+                  <p className="font-lilita text-[38px] leading-[1.15] text-ungu-gelap">{current.name}</p>
+                  <p className="text-lg font-extrabold text-ungu">{rupiah(current.price)}</p>
+                </div>
                 <Dots count={Math.min(menus.length, 4)} active={active} onPick={setActive} />
               </div>
             </div>
@@ -126,7 +144,9 @@ function Hero({ menus }) {
 export default function Landing() {
   const [menus, setMenus] = useState([])
   const [status, setStatus] = useState('loading') // loading | ready | error
-  const [cart, setCart] = useState({}) // { [menuId]: qty } dipakai form pre-order
+  const [cart, setCart] = useSessionState('mm-keranjang', {}) // { [menuId]: qty }, dipakai juga di /pesan
+  const [, setLastOrder] = useSessionState('mm-pesanan-terakhir', null)
+  const navigate = useNavigate()
 
   function loadMenus() {
     setStatus('loading')
@@ -199,6 +219,18 @@ export default function Landing() {
             )}
           </div>
         </section>
+
+        {/* Form pre-order desktop (Figma: bagian "Pre-order"); di HP form ada di halaman /pesan */}
+        <section id="pre-order" className="hidden scroll-mt-4 bg-krem px-16 pb-24 pt-20 lg:block" aria-labelledby="judul-preorder">
+          <div className="mx-auto max-w-[1312px]">
+            <div className="mb-7 flex items-end justify-between">
+              <h2 id="judul-preorder" className="font-lilita text-[56px] leading-[1.15]">Pre-order</h2>
+              <p className="text-base font-bold text-abu">Tanpa login · paling lambat H-1 · area Jakarta</p>
+            </div>
+            <OrderForm menus={menus} cart={cart} setCart={setCart}
+              onSubmitted={(order, context) => { setLastOrder({ order, context }); navigate('/pesanan/terkirim', { state: { order, context } }) }} />
+          </div>
+        </section>
       </main>
       <Footer />
 
@@ -209,9 +241,9 @@ export default function Landing() {
             <p className="text-xs font-semibold text-abu">{porsi} porsi</p>
             <p className="text-xl font-extrabold" aria-live="polite">{rupiah(subtotal)}</p>
           </div>
-          <a href="#pre-order" className="flex h-[52px] w-[115px] items-center justify-center gap-2 rounded-[10px] bg-ungu text-[15px] font-bold text-white">
+          <Link to="/pesan" className="flex h-[52px] w-[115px] items-center justify-center gap-2 rounded-[10px] bg-ungu text-[15px] font-bold text-white">
             Lanjut <img src={iconArrow} alt="" width="12" height="12" />
-          </a>
+          </Link>
         </div>
       )}
     </div>
