@@ -1,10 +1,14 @@
 -- 002_recap_view.sql: view untuk rekap keuangan (KF bagian 10 dan 12).
--- Satu baris per pesanan, hanya angka dan tanggal: tanpa nama, HP, alamat, token, atau kode pesanan.
+-- Berisi dua view, keduanya hanya angka dan tanggal: tanpa nama, HP, alamat, token, atau kode pesanan.
+--   recap_orders     : satu baris per pesanan (grand_total, paid_net, outstanding).
+--   recap_deliveries : satu baris per pengiriman (omzet mingguan menurut delivery_date, aturan D02).
 -- Pesanan dibatalkan tidak dihitung. Rumus sama dengan services/pricing.js:
 --   line_total  = qty * (unit_price + jumlah extra_price opsi item itu)
 --   grand_total = subtotal + ongkir semua pengiriman - diskon
 --   paid_net    = (dp + pelunasan) - refund
 -- Pengelompokan harian dan mingguan dilakukan di query pemanggil, bukan di view ini.
+-- Omzet mingguan dihitung dari recap_deliveries, bukan dari recap_orders, karena satu pesanan
+-- bisa punya beberapa pengiriman di minggu berbeda (first_delivery_date hanya tanggal kirim pertama).
 -- Dijalankan sekali; aman diulang (CREATE OR REPLACE).
 
 CREATE OR REPLACE VIEW recap_orders AS
@@ -48,3 +52,26 @@ FROM (
   ) p ON true
   WHERE o.status <> 'dibatalkan'
 ) t;
+
+-- Satu baris per pengiriman. subtotal = jumlah line_total item yang dikirim di pengiriman itu
+-- (order_items.delivery_id), sesuai per_delivery di services/pricing.js.
+-- Contoh omzet mingguan:
+--   SELECT date_trunc('week', delivery_date)::date AS minggu_mulai, SUM(subtotal) AS omzet
+--   FROM recap_deliveries GROUP BY 1 ORDER BY 1;
+CREATE OR REPLACE VIEW recap_deliveries AS
+SELECT
+  d.id AS delivery_id,
+  d.order_id,
+  d.delivery_date,
+  d.method,
+  d.delivery_status,
+  d.shipping_fee,
+  COALESCE((
+    SELECT SUM(oi.qty * (oi.unit_price + COALESCE(
+      (SELECT SUM(oio.extra_price) FROM order_item_options oio WHERE oio.order_item_id = oi.id), 0)))
+    FROM order_items oi
+    WHERE oi.delivery_id = d.id
+  ), 0)::int AS subtotal
+FROM deliveries d
+JOIN orders o ON o.id = d.order_id
+WHERE o.status <> 'dibatalkan';
