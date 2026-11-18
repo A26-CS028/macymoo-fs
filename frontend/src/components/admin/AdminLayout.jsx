@@ -1,9 +1,17 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuth } from '../../hooks/useAuth'
 
 // Pembungkus semua halaman admin: tanpa sesi sah, dialihkan ke halaman login /dapur.
 // shortcut: sidebar dan tab bar dari Figma belum ada, ditambahkan bersama halaman Dashboard Operasional.
+const NAV = [
+  { to: '/dapur/beranda', label: 'Beranda' },
+  { to: '/dapur/menu', label: 'Menu' },
+]
+
+const navCls = ({ isActive }) =>
+  `border-b-2 pb-1 ${isActive ? 'border-ungu-gelap' : 'border-transparent text-abu'}`
+
 export default function AdminLayout() {
   const { admin, setAdmin } = useAuth()
 
@@ -32,6 +40,13 @@ export default function AdminLayout() {
           </button>
         </div>
       </header>
+      <nav aria-label="Menu admin" className="flex gap-4 bg-white px-4 text-sm font-semibold shadow-sm">
+        {NAV.map((item) => (
+          <NavLink key={item.to} to={item.to} className={navCls}>
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
       <main className="p-4">
         <Outlet context={admin} />
       </main>
