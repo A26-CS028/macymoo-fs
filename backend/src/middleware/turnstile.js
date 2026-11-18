@@ -9,7 +9,7 @@ const failed = () =>
 async function verifyTurnstile(req, res, next) {
   try {
     const params = new URLSearchParams({
-      secret: turnstileSecretKey || '',
+      secret: turnstileSecretKey,
       response: req.body.turnstile_token,
     });
     if (req.ip) params.append('remoteip', req.ip);

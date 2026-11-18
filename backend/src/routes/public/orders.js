@@ -16,7 +16,6 @@ async function createOrder(body) {
   try {
     await client.query('BEGIN');
 
-    // tanggal ditutup Nabila
     const closed = await client.query('SELECT 1 FROM closed_dates WHERE closed_date = $1', [body.delivery_date]);
     if (closed.rowCount > 0) {
       throw httpError(409, 'DATE_CLOSED', 'Tanggal itu sedang ditutup. Silakan pilih tanggal lain.');
@@ -39,7 +38,6 @@ async function createOrder(body) {
     const menus = new Map(menuRes.rows.map((m) => [m.id, m]));
     const options = new Map(optRes.rows.map((o) => [o.id, o]));
 
-    // hitung harga (lempar PricingError bila menu/opsi tidak sah)
     const { items: priced, totals } = calculateOrder(
       {
         items: body.items.map((i) => ({
