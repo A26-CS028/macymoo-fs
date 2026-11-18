@@ -35,6 +35,12 @@ test('KF uji #2: nomor HP berisi huruf, tanggal kirim hari ini, porsi 0 ditolak'
   assert.match(r.error.details.find((d) => d.path[0] === 'delivery_date').message, /paling cepat besok/);
 });
 
+test('nomor HP 08, 62, dan +62 disimpan sebagai 62…', () => {
+  for (const phone of ['081234567890', '6281234567890', '+6281234567890']) {
+    assert.strictEqual(check({ ...valid(), phone }).value.phone, '6281234567890');
+  }
+});
+
 test('antar Nabila wajib alamat', () => {
   assert.deepStrictEqual(fields(check({ ...valid(), method: 'antar_nabila' })), ['address']);
   assert.deepStrictEqual(fields(check({ ...valid(), method: 'antar_nabila', address: 'Jl. Cempaka 12' })), []);

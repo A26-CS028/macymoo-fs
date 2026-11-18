@@ -33,16 +33,20 @@ const deliveryDate = Joi.string()
     'date.tooEarly': 'Tanggal kirim paling cepat besok',
   });
 
+// Disimpan seragam sebagai 62… agar pencarian Anonimkan dan link wa.me cocok untuk nomor yang sama.
+const phone = Joi.string()
+  .trim()
+  .pattern(/^(?:\+62|62|0)8[0-9]{8,12}$/)
+  .custom((value) => value.replace(/^(?:\+62|62|0)/, '62'))
+  .required()
+  .label('Nomor HP')
+  .messages({ 'string.pattern.base': 'Nomor HP tidak valid. Contoh: 081234567890' });
+
 const qtyMessage = 'Jumlah porsi harus bilangan bulat 1 sampai 50';
 
 const publicOrderCreate = Joi.object({
   customer_name: Joi.string().trim().min(1).max(100).required().label('Nama'),
-  phone: Joi.string()
-    .trim()
-    .pattern(/^(?:\+62|62|0)8[0-9]{8,12}$/)
-    .required()
-    .label('Nomor HP')
-    .messages({ 'string.pattern.base': 'Nomor HP tidak valid. Contoh: 081234567890' }),
+  phone,
   delivery_date: deliveryDate,
   method: Joi.string().valid('antar_nabila', 'ambil_sendiri').required().label('Cara antar'),
   address: Joi.when('method', {
@@ -76,4 +80,4 @@ const publicOrderCreate = Joi.object({
   website: Joi.string().valid('').label('website').messages({ 'any.only': 'Permintaan tidak valid' }), // honeypot
 }).prefs({ errors: { wrap: { label: false } }, messages });
 
-module.exports = { publicOrderCreate };
+module.exports = { phone, publicOrderCreate };

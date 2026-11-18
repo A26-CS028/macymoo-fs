@@ -2218,7 +2218,7 @@ components:
           maxLength: 100
         phone:
           type: string
-          description: Nomor HP Indonesia (divalidasi Joi).
+          description: Nomor HP Indonesia, diawali 08, 62, atau +62. Disimpan sebagai 62… (divalidasi Joi).
           example: '081234567890'
         delivery_date:
           type: string
