@@ -45,6 +45,15 @@ test('honeypot terisi, aturan tidak disetujui, dan tanpa menu ditolak', () => {
   assert.deepStrictEqual(fields(check({ ...valid(), items: [] })), ['items']);
 });
 
+test('maksimal 20 item per pesanan dan 5 opsi per item', () => {
+  const item = { menu_id: 1, qty: 1 };
+  assert.deepStrictEqual(fields(check({ ...valid(), items: Array(20).fill(item) })), []);
+  const r = check({ ...valid(), items: Array(21).fill(item) });
+  assert.deepStrictEqual(fields(r), ['items']);
+  assert.match(r.error.details[0].message, /maksimal 20/);
+  assert.deepStrictEqual(fields(check({ ...valid(), items: [{ ...item, option_ids: [1, 2, 3, 4, 5, 6] }] })), ['items.0.option_ids']);
+});
+
 test('harga dari browser dibuang', () => {
   const r = check({ ...valid(), total: 1, items: [{ menu_id: 1, qty: 1, unit_price: 1 }] });
   assert.strictEqual(r.value.total, undefined);

@@ -15,6 +15,7 @@ const messages = {
   'number.max': '{#label} maksimal {#limit}',
   'array.base': '{#label} tidak valid',
   'array.min': '{#label} minimal {#limit} isi',
+  'array.max': '{#label} maksimal {#limit} isi',
   'boolean.base': '{#label} tidak valid',
   'any.only': '{#label} tidak valid',
 };
@@ -51,6 +52,7 @@ const publicOrderCreate = Joi.object({
   }),
   items: Joi.array()
     .min(1)
+    .max(20)
     .items(
       Joi.object({
         menu_id: Joi.number().integer().positive().required().label('Menu'),
@@ -60,7 +62,7 @@ const publicOrderCreate = Joi.object({
           'number.min': qtyMessage,
           'number.max': qtyMessage,
         }),
-        option_ids: Joi.array().items(Joi.number().integer().positive()).default([]).label('Opsi'),
+        option_ids: Joi.array().items(Joi.number().integer().positive()).max(5).default([]).label('Opsi'), // 5 = jumlah option_group
         note: Joi.string().trim().max(500).allow('').label('Catatan'),
       })
     )
