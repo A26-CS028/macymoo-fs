@@ -1402,7 +1402,7 @@ paths:
       tags: [Admin - Tambahan]
       summary: Rekap keuangan harian atau mingguan
       description: |
-        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Pesanan `dibatalkan` tidak dihitung.
+        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Omzet hanya dari pesanan `diproses` dan `selesai`.
         **Kolom `RecapRow` masih usulan**; difinalkan bersama DS di minggu 3.
       security:
         - cookieAuth: []
