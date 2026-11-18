@@ -13,6 +13,7 @@ class PricingError extends Error {
   constructor(message, details) {
     super(message)
     this.name = 'PricingError'
+    this.status = 400
     this.code = 'VALIDATION_ERROR'
     this.details = details
   }
