@@ -12,16 +12,16 @@ function httpError(status, code, message, details) {
   return Object.assign(new Error(message), { status, code, details });
 }
 
-// eslint-disable-next-line no-unused-vars
+// next tidak dipakai, tetapi wajib ada: Express mengenali error handler dari 4 parameter.
 function errorHandler(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
-  // Error tak terduga (tanpa kode) dicatat dan pesannya disembunyikan; error yang sengaja dibuat (httpError) ditampilkan
-  const unexpected = status >= 500 && !err.code;
+  // Hanya error dengan status eksplisit (httpError, body-parser) yang pesannya boleh sampai ke klien.
+  // Error pg dan sistem juga punya err.code ('23505', 'ETIMEDOUT'), jadi code tidak bisa jadi penanda.
+  const unexpected = !(err.status || err.statusCode);
   if (unexpected) console.error(err);
   res.status(status).json({
     error: {
-      code: err.code || DEFAULT_CODES[status] || 'INTERNAL_ERROR',
-      // pesan error server tidak dikirim ke klien supaya detail internal tidak bocor
+      code: unexpected ? 'INTERNAL_ERROR' : err.code || DEFAULT_CODES[status] || 'INTERNAL_ERROR',
       message: unexpected ? 'Terjadi kesalahan di server' : err.message,
       ...(err.details && { details: err.details }),
     },

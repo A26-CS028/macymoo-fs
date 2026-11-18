@@ -2218,7 +2218,7 @@ components:
           maxLength: 100
         phone:
           type: string
-          description: Nomor HP Indonesia (divalidasi Joi).
+          description: Nomor HP Indonesia, diawali 08, 62, atau +62. Disimpan sebagai 62… (divalidasi Joi).
           example: '081234567890'
         delivery_date:
           type: string
@@ -2233,6 +2233,7 @@ components:
         items:
           type: array
           minItems: 1
+          maxItems: 20
           items:
             type: object
             required: [menu_id, qty]
@@ -2246,6 +2247,7 @@ components:
                 description: "Batas 50 porsi per baris (disepakati tim, review PR #5); lebih dari itu lewat WhatsApp (MacLab)."
               option_ids:
                 type: array
+                maxItems: 5
                 items:
                   type: integer
                 description: Id `menu_options` milik menu itu; paling banyak satu per `option_group`.

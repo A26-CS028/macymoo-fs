@@ -3,7 +3,6 @@ import { api } from '../../api/client'
 import { useAuth } from '../../hooks/useAuth'
 
 // Pembungkus semua halaman admin: tanpa sesi sah, dialihkan ke halaman login /dapur.
-// shortcut: sidebar dan tab bar dari Figma belum ada, ditambahkan bersama halaman Dashboard Operasional.
 export default function AdminLayout() {
   const { admin, setAdmin } = useAuth()
 
