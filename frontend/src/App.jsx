@@ -3,6 +3,7 @@ import Landing from './pages/public/Landing.jsx'
 import Order from './pages/public/Order.jsx'
 import OrderSummary from './pages/public/OrderSummary.jsx'
 import Login from './pages/admin/Login.jsx'
+import Menus from './pages/admin/Menus.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Route index element={<Login />} />
         <Route element={<AdminLayout />}>
           <Route path="beranda" element={<p>Dashboard Operasional (segera)</p>} />
+          <Route path="menu" element={<Menus />} />
         </Route>
       </Route>
     </Routes>
