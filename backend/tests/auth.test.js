@@ -4,6 +4,8 @@ const assert = require('node:assert');
 
 process.env.JWT_SECRET = 'rahasia-uji-minimal-32-karakter-xx';
 process.env.DATABASE_URL = 'postgres://uji@localhost/uji';
+process.env.TURNSTILE_SECRET_KEY = 'rahasia-uji';
+process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
 const jwt = require('jsonwebtoken');
 const { requireAdmin, COOKIE_NAME } = require('../src/middleware/auth');
 const { errorHandler } = require('../src/middleware/errorHandler');

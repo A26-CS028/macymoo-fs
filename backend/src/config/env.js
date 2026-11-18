@@ -9,6 +9,9 @@ const env = {
 const problems = [];
 if (!env.databaseUrl) problems.push('DATABASE_URL kosong');
 if (!env.jwtSecret || env.jwtSecret.length < 32) problems.push('JWT_SECRET minimal 32 karakter');
+// Tanpa FRONTEND_ORIGIN, cors() jatuh ke Access-Control-Allow-Origin: *.
+if (!env.frontendOrigin) problems.push('FRONTEND_ORIGIN kosong');
+if (!env.turnstileSecretKey) problems.push('TURNSTILE_SECRET_KEY kosong');
 if (problems.length) throw new Error(`Konfigurasi tidak valid: ${problems.join(', ')}`);
 
 module.exports = env;

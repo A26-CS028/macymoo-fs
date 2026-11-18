@@ -5,6 +5,7 @@ const assert = require('node:assert');
 process.env.JWT_SECRET = 'rahasia-uji-minimal-32-karakter-xx';
 process.env.DATABASE_URL = 'postgres://uji@localhost/uji';
 process.env.TURNSTILE_SECRET_KEY = 'rahasia-uji';
+process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
 const { publicOrderCreate } = require('../src/validators/order');
 const verifyTurnstile = require('../src/middleware/turnstile');
 const { todayJakarta, tomorrowJakarta } = require('../src/utils/date');
