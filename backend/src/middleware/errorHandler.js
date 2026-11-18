@@ -12,7 +12,7 @@ function httpError(status, code, message, details) {
   return Object.assign(new Error(message), { status, code, details });
 }
 
-// eslint-disable-next-line no-unused-vars
+// next tidak dipakai, tetapi wajib ada: Express mengenali error handler dari 4 parameter.
 function errorHandler(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
   // Hanya error dengan status eksplisit (httpError, body-parser) yang pesannya boleh sampai ke klien.

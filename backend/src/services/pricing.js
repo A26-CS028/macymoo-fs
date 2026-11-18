@@ -1,5 +1,4 @@
-// services/pricing.js
-// Satu-satunya tempat menghitung harga (CommonJS, sama dengan sisa backend). Fungsi murni: tanpa akses database.
+// Satu-satunya tempat menghitung harga. Fungsi murni: tanpa akses database.
 // Uang = Rupiah bulat (integer). Harga dari browser diabaikan untuk item bertipe `menu`:
 // harga dasar dan harga opsi selalu diambil dari katalog yang dikirim pemanggil (dibaca dari DB).
 //

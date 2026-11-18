@@ -43,8 +43,6 @@ function buildSet(body, columns) {
   return { sets, values };
 }
 
-// ---- Menu --------------------------------------------------------------
-
 // Semua menu, termasuk yang habis (GET /menus publik hanya yang tersedia).
 router.get('/', async (req, res, next) => {
   try {
@@ -88,8 +86,6 @@ router.patch('/:id', validate(menuUpdate), async (req, res, next) => {
     next(err);
   }
 });
-
-// ---- Opsi menu ---------------------------------------------------------
 
 router.get('/:id/options', async (req, res, next) => {
   try {
