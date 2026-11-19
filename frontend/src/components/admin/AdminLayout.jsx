@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 // shortcut: sidebar dan tab bar dari Figma belum ada, ditambahkan bersama halaman Dashboard Operasional.
 const NAV = [
   { to: '/dapur/beranda', label: 'Beranda' },
+  { to: '/dapur/pesanan', label: 'Pesanan' },
   { to: '/dapur/menu', label: 'Menu' },
   { to: '/dapur/maclab', label: 'MacLab' },
 ]

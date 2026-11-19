@@ -1,0 +1,70 @@
+import { useEffect, useRef } from 'react'
+
+// Modal dasbor (Figma: Modal — Konfirmasi/Jadwalkan Ulang/Batalkan). Di HP tampil sebagai sheet dari bawah.
+// Esc atau klik latar menutup; fokus dipindah ke dalam modal dan dikembalikan saat ditutup.
+export default function Modal({ title, subtitle, onClose, children, width = 'lg:w-[580px]', titleId = 'judul-modal', hideHeader }) {
+  const box = useRef(null)
+  const close = useRef(onClose)
+  close.current = onClose
+
+  useEffect(() => {
+    const prev = document.activeElement
+    box.current?.querySelector('input, textarea, select, button:not([data-tutup])')?.focus()
+    const onKey = (e) => e.key === 'Escape' && close.current()
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+      prev?.focus?.()
+    }
+  }, []) // sekali saat dibuka; onClose lewat ref supaya fokus tidak melompat tiap render
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ungu-gelap/40 lg:items-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId}
+        className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[24px] bg-white px-5 pb-6 pt-2.5 text-ungu-gelap shadow-xl lg:rounded-[24px] lg:p-7 ${width}`}>
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e4dccb] lg:hidden" />
+        {!hideHeader && (
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 id={titleId} className="text-xl font-bold lg:text-2xl">{title}</h2>
+              {subtitle && <p className="mt-0.5 text-[13px] font-medium text-abu">{subtitle}</p>}
+            </div>
+            <button type="button" data-tutup onClick={onClose} aria-label="Tutup" className="rounded-lg p-1 hover:bg-krem-field">
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </div>
+        )}
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// Kotak info abu (Figma: catatan di bawah isian modal)
+export function Info({ children }) {
+  return (
+    <p className="flex items-start gap-2 rounded-[10px] bg-krem-field px-3 py-2.5 text-xs font-semibold">
+      <svg viewBox="0 0 24 24" className="mt-px size-4 shrink-0 text-ungu" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+      {children}
+    </p>
+  )
+}
+
+export function ErrorBox({ error }) {
+  if (!error) return null
+  return (
+    <div role="alert" className="rounded-[10px] bg-[#fde8e8] px-3 py-2 text-sm font-semibold text-[#b91c1c]">
+      {error.message}
+      {error.details?.length > 0 && (
+        <ul className="mt-1 list-disc pl-5 font-medium">{error.details.map((d, i) => <li key={i}>{d.message}</li>)}</ul>
+      )}
+    </div>
+  )
+}
+
+export const btnSekunder = 'h-12 rounded-[10px] bg-krem-field px-5 text-[15px] font-bold disabled:opacity-50'
+export const btnUtama = 'flex h-12 items-center justify-center gap-2 rounded-[10px] bg-ungu px-5 text-[15px] font-bold text-white disabled:opacity-50'
+export const fieldCls = 'h-12 w-full rounded-[10px] bg-krem-field px-4 text-[15px] font-medium outline-none focus:ring-2 focus:ring-ungu'
+export const labelCls = 'mb-2 block text-[13px] font-bold'
