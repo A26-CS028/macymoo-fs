@@ -9,8 +9,20 @@ export default function Modal({ title, subtitle, onClose, children, width = 'lg:
 
   useEffect(() => {
     const prev = document.activeElement
-    box.current?.querySelector('input, textarea, select, button:not([data-tutup])')?.focus()
-    const onKey = (e) => e.key === 'Escape' && close.current()
+    // Fokus ke kotak modal dulu (isi bisa masih dimuat), supaya pembaca layar langsung membaca judulnya
+    box.current?.focus()
+    const onKey = (e) => {
+      if (e.key === 'Escape') return close.current()
+      if (e.key !== 'Tab' || !box.current) return
+      // Tab dikurung di dalam modal: dari elemen terakhir kembali ke pertama, dan sebaliknya
+      const items = [...box.current.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled])')]
+        .filter((el) => el.offsetParent !== null || el.getClientRects().length)
+      if (!items.length) return e.preventDefault()
+      const first = items[0], last = items.at(-1)
+      const inside = box.current.contains(document.activeElement)
+      if (e.shiftKey && (document.activeElement === first || !inside || document.activeElement === box.current)) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus() }
+    }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
@@ -22,8 +34,8 @@ export default function Modal({ title, subtitle, onClose, children, width = 'lg:
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ungu-gelap/40 lg:items-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId}
-        className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[24px] bg-white px-5 pb-6 pt-2.5 text-ungu-gelap shadow-xl lg:rounded-[24px] lg:p-7 ${width}`}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
+        className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[24px] bg-white px-5 pb-6 pt-2.5 text-ungu-gelap shadow-xl outline-none lg:rounded-[24px] lg:p-7 ${width}`}>
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e4dccb] lg:hidden" />
         {!hideHeader && (
           <div className="mb-5 flex items-start justify-between gap-4">

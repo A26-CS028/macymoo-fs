@@ -12,6 +12,8 @@ const { confirmOrder, rescheduleOrder, cancelOrder, listQuery } = require('../..
 
 const router = express.Router();
 router.use(requireAdmin);
+// id di luar batas INTEGER Postgres = pasti tidak ada (tanpa ini query gagal jadi 500)
+router.param('id', (req, res, next, id) => (Number(id) > 2147483647 ? next(httpError(404, 'NOT_FOUND', 'Pesanan tidak ditemukan')) : next()));
 
 const PAY_WINDOW_MS = 4 * 60 * 60 * 1000; // batas bayar 4 jam setelah Kirim Tagihan (KF 6)
 

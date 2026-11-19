@@ -44,7 +44,8 @@ export default function Orders() {
   const count = (k) => (orders || []).filter((o) => k === 'semua' || o.status === k).length
   const filtered = (orders || []).filter((o) => tab === 'semua' || o.status === tab)
   const pages = Math.max(1, Math.ceil(filtered.length / PER_HALAMAN))
-  const shown = filtered.slice((page - 1) * PER_HALAMAN, page * PER_HALAMAN)
+  const current = Math.min(page, pages) // setelah aksi, halaman terakhir bisa hilang
+  const shown = filtered.slice((current - 1) * PER_HALAMAN, current * PER_HALAMAN)
 
   const close = useCallback(() => setModal(null), [])
   const done = useCallback((_, message) => { setModal(null); setNotice(message); load(q.trim()) }, [load, q])
@@ -79,7 +80,7 @@ export default function Orders() {
 
       {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
 
-      <div className="mt-4 lg:rounded-[20px] lg:bg-white lg:p-5">
+      <div className="mt-4 xl:rounded-[20px] xl:bg-white xl:p-5">
         {error && (
           <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[10px] bg-[#fde8e8] px-4 py-3 text-sm font-semibold text-[#b91c1c]">
             Pesanan belum bisa dimuat: {error}
@@ -98,8 +99,8 @@ export default function Orders() {
             {pages > 1 && (
               <nav aria-label="Halaman" className="flex items-center gap-1">
                 {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-                  <button key={n} type="button" onClick={() => setPage(n)} aria-current={page === n ? 'page' : undefined}
-                    className={`size-9 rounded-full text-sm font-bold ${page === n ? 'bg-ungu-gelap text-white' : 'bg-krem-field text-ungu-gelap'}`}>{n}</button>
+                  <button key={n} type="button" onClick={() => setPage(n)} aria-current={current === n ? 'page' : undefined}
+                    className={`size-9 rounded-full text-sm font-bold ${current === n ? 'bg-ungu-gelap text-white' : 'bg-krem-field text-ungu-gelap'}`}>{n}</button>
                 ))}
               </nav>
             )}

@@ -74,7 +74,8 @@ export default function OrderTable({ orders, onAction }) {
   return (
     <>
       {/* Desktop */}
-      <table className="hidden w-full text-left text-sm lg:table">
+      {/* Tabel mulai 1280px; di bawahnya kolom terlalu sempit (nama panjang turun belasan baris) */}
+      <table className="hidden w-full text-left text-sm xl:table">
         <thead>
           <tr className="text-xs font-semibold text-abu [&>th]:bg-krem-field [&>th]:px-4 [&>th]:py-3 first:[&>th]:rounded-l-[12px] last:[&>th]:rounded-r-[12px]">
             <th scope="col">Kode</th><th scope="col">Pelanggan</th><th scope="col">Menu</th><th scope="col">Kirim</th>
@@ -87,7 +88,7 @@ export default function OrderTable({ orders, onAction }) {
             return (
               <tr key={o.id} className="[&>td]:px-4 [&>td]:py-4">
                 <td className="whitespace-nowrap font-bold text-ungu">{o.order_code}</td>
-                <td className="font-bold">{o.customer_name || <span className="font-medium text-abu">Dianonimkan</span>}</td>
+                <td className="max-w-[200px] font-bold"><span className="line-clamp-2" title={o.customer_name || undefined}>{o.customer_name || <span className="font-medium text-abu">Dianonimkan</span>}</span></td>
                 <td className="max-w-[170px] text-xs font-medium">{menuLabel(o)}</td>
                 <td className="whitespace-nowrap text-xs font-medium">{kirimLabel(o.delivery_dates)}</td>
                 <td><Metode o={o} /></td>
@@ -118,14 +119,14 @@ export default function OrderTable({ orders, onAction }) {
         </tbody>
       </table>
 
-      {/* HP */}
-      <ul className="flex flex-col gap-3 lg:hidden">
+      {/* HP dan tablet: kartu, dua kolom mulai 768px */}
+      <ul className="grid gap-3 md:grid-cols-2 xl:hidden">
         {orders.map((o) => {
           const a = aksiUntuk(o.status)
           const [label, text, dot] = STATUS[o.status]
           const first = o.items_summary[0]?.name || ''
           return (
-            <li key={o.id} className="rounded-[18px] bg-white p-4">
+            <li key={o.id} className="flex flex-col rounded-[18px] bg-white p-4">
               <div className="flex items-center justify-between gap-2 text-[13px] font-bold">
                 <span className="text-ungu">{o.order_code}</span>
                 <span className={`inline-flex items-center gap-1.5 ${text}`}><span className={`size-1.5 rounded-full ${dot}`} />{label}</span>
@@ -140,7 +141,7 @@ export default function OrderTable({ orders, onAction }) {
                 </div>
               </div>
               {(a.konfirmasi || a.jadwal) && (
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-bold">
+                <div className="mt-auto grid grid-cols-2 gap-2 pt-3 text-sm font-bold">
                   {a.konfirmasi
                     ? <button type="button" onClick={() => onAction('konfirmasi', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-ungu text-white"><Ikon d={I.centang} />Konfirmasi</button>
                     : <button type="button" onClick={() => onAction('jadwal', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-krem-field"><Ikon d={I.kalender} />Jadwal ulang</button>}

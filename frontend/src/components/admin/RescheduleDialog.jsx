@@ -70,7 +70,8 @@ export default function RescheduleDialog({ orderId, onClose, onDone }) {
             </div>
           )}
 
-          <fieldset>
+          {/* min-w-0: fieldset bawaan browser tidak menyusut, deretan tanggal jadi melebarkan modal */}
+          <fieldset className="min-w-0">
             <legend className={labelCls}>Tanggal kirim baru{delivery ? ` (sekarang ${labelTanggal(delivery.delivery_date).panjang})` : ''}</legend>
             <div role="radiogroup" aria-label="Tanggal kirim baru" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
               {days.map((d) => {
