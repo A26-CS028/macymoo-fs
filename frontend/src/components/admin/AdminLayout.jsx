@@ -1,9 +1,10 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Link, Navigate, Outlet } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuth } from '../../hooks/useAuth'
 
 // Pembungkus semua halaman admin: tanpa sesi sah, dialihkan ke halaman login /dapur.
 // shortcut: sidebar dan tab bar dari Figma belum ada, ditambahkan bersama halaman Dashboard Operasional.
+// Tautan MacLab di header bersifat sementara sampai sidebar ada.
 export default function AdminLayout() {
   const { admin, setAdmin } = useAuth()
 
@@ -20,7 +21,12 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-krem-field text-ungu-gelap">
       <header className="flex items-center justify-between bg-white px-4 py-3 shadow-sm">
-        <span className="font-bold">Macyourmoo</span>
+        <div className="flex items-center gap-4">
+          <span className="font-bold">Macyourmoo</span>
+          <Link to="/dapur/maclab" className="text-sm font-semibold hover:underline">
+            MacLab
+          </Link>
+        </div>
         <div className="flex items-center gap-3 text-sm">
           <span>{admin.username}</span>
           <button
