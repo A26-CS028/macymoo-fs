@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 const NAV = [
   { to: '/dapur/beranda', label: 'Beranda' },
   { to: '/dapur/menu', label: 'Menu' },
+  { to: '/dapur/maclab', label: 'MacLab' },
 ]
 
 const navCls = ({ isActive }) =>
@@ -28,7 +29,9 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-krem-field text-ungu-gelap">
       <header className="flex items-center justify-between bg-white px-4 py-3 shadow-sm">
-        <span className="font-bold">Macyourmoo</span>
+        <div className="flex items-center gap-4">
+          <span className="font-bold">Macyourmoo</span>
+        </div>
         <div className="flex items-center gap-3 text-sm">
           <span>{admin.username}</span>
           <button
