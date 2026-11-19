@@ -135,7 +135,7 @@ export default function OrderTable({ orders, onAction }) {
                 <div className="min-w-0">
                   <p className="font-bold">{o.customer_name || 'Dianonimkan'}</p>
                   <p className="text-xs font-medium text-abu">
-                    {[menuLabel(o).replace(/×\s/g, ''), o.payment_overdue ? 'lewat batas bayar' : null, kirimLabel(o.delivery_dates)].filter(Boolean).join(' · ')}
+                    {[menuLabel(o).replace(/×\s/g, ' '), o.payment_overdue ? 'lewat batas bayar' : null, kirimLabel(o.delivery_dates)].filter(Boolean).join(' · ')}
                   </p>
                 </div>
               </div>
