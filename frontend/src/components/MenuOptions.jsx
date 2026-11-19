@@ -45,24 +45,43 @@ export default function MenuOptions({ menu, sel, onChange }) {
   const tambahan = tambahanOf(menu)
   const [open, setOpen] = useState(false)
   const level = s.pedas ? pedas.findIndex((o) => o.id === s.pedas) + 1 : 0
+  const [hover, setHover] = useState(0)
+  const shown = hover || level // level yang ditampilkan: pratinjau saat disorot, selain itu pilihan
   const set = (patch) => onChange({ ...s, ...patch })
 
   return (
     <div className="mt-4 flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {pedas.length > 0 && (
-          // Figma "Pedas (klik untuk naik level)": klik menaikkan level, setelah level tertinggi kembali ke tidak pedas
-          <button type="button" onClick={() => set({ pedas: level >= pedas.length ? null : pedas[level].id })}
-            className="flex items-center gap-1 py-1" aria-label={`Level pedas: ${level ? pedas[level - 1].name : 'tidak pedas'}. Klik untuk ganti`}>
-            {pedas.map((o, i) => (
-              <span key={o.id} className="flex size-6 items-center justify-center">
-                <img src={i < level ? cabaiOn : cabaiOff} alt="" width="17.6" height="21.1" />
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Klik cabai ke-n = level n (bukan klik berulang). Arahkan kursor untuk pratinjau level. */}
+            <div role="radiogroup" aria-label="Level pedas" className="flex items-center gap-0.5 py-1" onMouseLeave={() => setHover(0)}>
+              {pedas.map((o, i) => (
+                <button key={o.id} type="button" role="radio" aria-checked={level === i + 1}
+                  aria-label={`Pedas ${o.name.toLowerCase()}`} onClick={() => set({ pedas: o.id })}
+                  onMouseEnter={() => setHover(i + 1)} onFocus={() => setHover(i + 1)} onBlur={() => setHover(0)}
+                  className="flex size-7 items-center justify-center rounded-full transition-transform duration-150 hover:-translate-y-0.5 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ungu">
+                  <img src={i < shown ? cabaiOn : cabaiOff} alt="" width="17.6" height="21.1"
+                    className={`transition-opacity ${hover && hover !== level && i < shown ? 'opacity-60' : ''}`} />
+                </button>
+              ))}
+              {/* Lebar tetap supaya baris tidak bergeser saat pratinjau/pilihan berganti */}
+              <span aria-hidden="true" className={`ml-1.5 w-[78px] text-sm font-bold ${shown ? 'text-[#dc2626]' : 'text-abu'} ${hover && hover !== level ? 'opacity-60' : ''}`}>
+                {shown ? pedas[shown - 1].name : 'Tidak pedas'}
               </span>
-            ))}
-            <span className={`ml-1.5 text-sm font-bold ${level ? 'text-[#dc2626]' : 'text-abu'}`}>
-              {level ? `Pedas ${pedas[level - 1].name.toLowerCase()}` : 'Tidak pedas'}
-            </span>
-          </button>
+            </div>
+            {/* Muncul setelah memilih level: kembali ke tidak pedas */}
+            {level > 0 && (
+              <button type="button" onClick={() => { set({ pedas: null }); setHover(0) }}
+                className="flex h-[30px] animate-muncul items-center gap-1.5 rounded-full bg-krem-field pl-1.5 pr-3 text-xs font-bold text-abu transition-colors hover:bg-ungu-gelap hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ungu">
+                <span className="relative flex size-5 items-center justify-center rounded-full bg-white" aria-hidden="true">
+                  <img src={cabaiOff} alt="" width="11" height="13" />
+                  <span className="absolute h-[2px] w-4 -rotate-45 rounded-full bg-[#dc2626]" />
+                </span>
+                Tidak pedas
+              </button>
+            )}
+          </div>
         )}
         {ayam.length > 0 && (
           <div role="radiogroup" aria-label="Bagian ayam" className="flex gap-1 rounded-[10px] bg-krem-field p-1">
