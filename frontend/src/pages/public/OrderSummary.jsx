@@ -9,7 +9,6 @@ import paketMenu from '../../assets/landing/paket-menu.webp'
 import iconArrow from '../../assets/landing/icon-arrow-right.svg'
 
 // Ringkasan setelah submit (Figma: "Ringkasan Setelah Submit" dan "Mobile — Pre-Order Terkirim").
-// shortcut: ikon tautan, salin, chat, centang, dan tutup digambar ulang (bukan aset Figma) karena kuota MCP Figma habis.
 const Svg = ({ children, className = 'size-4' }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{children}</svg>
 )

@@ -17,7 +17,7 @@ import iconArrowGelap from '../assets/landing/icon-arrow-gelap.svg'
 // Form pre-order tanpa login (Figma: bagian "Pre-order" desktop dan "Mobile — Pesananmu").
 // Harga di sini hanya pratinjau; server menghitung ulang dari database.
 const NOTE_MAX = 200
-const PHONE_RE = /^08\d{8,11}$/
+const PHONE_RE = /^(?:\+62|62|0)8\d{8,12}$/ // sama dengan backend/src/validators/order.js
 const EMPTY_FORM = { customer_name: '', phone: '', delivery_date: '', method: 'antar_nabila', address: '', note: '', agree_rules: false }
 
 const card = 'min-w-0 rounded-[20px] bg-white p-4 lg:p-7' // min-w-0: deretan tanggal boleh digulir tanpa melebarkan halaman
@@ -77,7 +77,7 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
     const e = {}
     if (!lines.length) e.items = 'Pilih minimal 1 menu'
     if (!form.customer_name.trim()) e.customer_name = 'Nama wajib diisi'
-    if (!PHONE_RE.test(form.phone.replace(/[\s-]/g, ''))) e.phone = 'Diawali 08, 10–13 digit'
+    if (!PHONE_RE.test(form.phone.replace(/[\s-]/g, ''))) e.phone = 'Diawali 08 atau +62. Contoh: 081234567890'
     if (!form.delivery_date || form.delivery_date <= today || closed.includes(form.delivery_date)) e.delivery_date = 'Pilih tanggal kirim mulai besok'
     if (antar && !form.address.trim()) e.address = 'Alamat wajib diisi bila diantar Nabila'
     if (!form.agree_rules) e.agree_rules = 'Setujui Aturan & Kebijakan Privasi dulu'

@@ -5,6 +5,7 @@ const assert = require('node:assert');
 process.env.JWT_SECRET = 'rahasia-uji-minimal-32-karakter-xx';
 process.env.DATABASE_URL = 'postgres://uji@localhost/uji';
 process.env.TURNSTILE_SECRET_KEY = 'rahasia-uji';
+process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
 const { publicOrderCreate } = require('../src/validators/order');
 const verifyTurnstile = require('../src/middleware/turnstile');
 const { todayJakarta, tomorrowJakarta } = require('../src/utils/date');
@@ -34,6 +35,12 @@ test('KF uji #2: nomor HP berisi huruf, tanggal kirim hari ini, porsi 0 ditolak'
   assert.match(r.error.details.find((d) => d.path[0] === 'delivery_date').message, /paling cepat besok/);
 });
 
+test('nomor HP 08, 62, dan +62 disimpan sebagai 62…', () => {
+  for (const phone of ['081234567890', '6281234567890', '+6281234567890']) {
+    assert.strictEqual(check({ ...valid(), phone }).value.phone, '6281234567890');
+  }
+});
+
 test('antar Nabila wajib alamat', () => {
   assert.deepStrictEqual(fields(check({ ...valid(), method: 'antar_nabila' })), ['address']);
   assert.deepStrictEqual(fields(check({ ...valid(), method: 'antar_nabila', address: 'Jl. Cempaka 12' })), []);
@@ -43,6 +50,15 @@ test('honeypot terisi, aturan tidak disetujui, dan tanpa menu ditolak', () => {
   assert.deepStrictEqual(fields(check({ ...valid(), website: 'http://spam' })), ['website']);
   assert.deepStrictEqual(fields(check({ ...valid(), agree_rules: false })), ['agree_rules']);
   assert.deepStrictEqual(fields(check({ ...valid(), items: [] })), ['items']);
+});
+
+test('maksimal 20 item per pesanan dan 5 opsi per item', () => {
+  const item = { menu_id: 1, qty: 1 };
+  assert.deepStrictEqual(fields(check({ ...valid(), items: Array(20).fill(item) })), []);
+  const r = check({ ...valid(), items: Array(21).fill(item) });
+  assert.deepStrictEqual(fields(r), ['items']);
+  assert.match(r.error.details[0].message, /maksimal 20/);
+  assert.deepStrictEqual(fields(check({ ...valid(), items: [{ ...item, option_ids: [1, 2, 3, 4, 5, 6] }] })), ['items.0.option_ids']);
 });
 
 test('harga dari browser dibuang', () => {

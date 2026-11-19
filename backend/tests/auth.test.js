@@ -4,6 +4,8 @@ const assert = require('node:assert');
 
 process.env.JWT_SECRET = 'rahasia-uji-minimal-32-karakter-xx';
 process.env.DATABASE_URL = 'postgres://uji@localhost/uji';
+process.env.TURNSTILE_SECRET_KEY = 'rahasia-uji';
+process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
 const jwt = require('jsonwebtoken');
 const { requireAdmin, COOKIE_NAME } = require('../src/middleware/auth');
 const { errorHandler } = require('../src/middleware/errorHandler');
@@ -65,4 +67,27 @@ test('error 500 tidak membocorkan pesan internal', () => {
   assert.strictEqual(res.statusCode, 500);
   assert.strictEqual(res.body.error.code, 'INTERNAL_ERROR');
   assert.ok(!res.body.error.message.includes('rahasia'));
+});
+
+test('error pg (punya code, tanpa status) tetap disembunyikan', () => {
+  const res = { status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; } };
+  const err = Object.assign(new Error('duplicate key value violates unique constraint "orders_public_token_key"'), { code: '23505' });
+  const log = console.error;
+  let logged = false;
+  console.error = () => { logged = true; };
+  errorHandler(err, {}, res, () => {});
+  console.error = log;
+  assert.strictEqual(res.statusCode, 500);
+  assert.strictEqual(res.body.error.code, 'INTERNAL_ERROR');
+  assert.ok(!res.body.error.message.includes('orders_public_token_key'));
+  assert.ok(logged);
+});
+
+test('PricingError dibalas 400 dengan details', () => {
+  const res = { status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; } };
+  const { PricingError } = require('../src/services/pricing');
+  errorHandler(new PricingError('Menu tidak ditemukan', [{ field: 'items[0].menu_id', message: 'Menu tidak ditemukan' }]), {}, res, () => {});
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.error.code, 'VALIDATION_ERROR');
+  assert.strictEqual(res.body.error.details[0].field, 'items[0].menu_id');
 });
