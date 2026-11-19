@@ -1837,7 +1837,7 @@ components:
           description: True bila ada pengiriman Antar Nabila dan ongkir belum diisi (belum dikonfirmasi).
     OrderListItem:
       type: object
-      required: [id, order_code, source, status, pay_status, delivery_dates, grand_total, payment_overdue, created_at]
+      required: [id, order_code, source, status, pay_status, delivery_dates, delivery_methods, items_summary, grand_total, payment_overdue, created_at]
       properties:
         id:
           type: integer
@@ -1861,6 +1861,22 @@ components:
           items:
             type: string
             format: date
+        delivery_methods:
+          type: array
+          description: Cara kirim pesanan ini tanpa duplikat (kolom Metode di tabel Pesanan Masuk).
+          items:
+            $ref: '#/components/schemas/DeliveryMethod'
+        items_summary:
+          type: array
+          description: Isi pesanan untuk kolom Menu; qty dijumlahkan per nama di semua pengiriman, urut item pertama dibuat.
+          items:
+            type: object
+            required: [name, qty]
+            properties:
+              name:
+                type: string
+              qty:
+                type: integer
         grand_total:
           $ref: '#/components/schemas/Rupiah'
         payment_overdue:

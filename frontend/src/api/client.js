@@ -22,6 +22,8 @@ export async function api(path, { headers, ...options } = {}) {
     err.code = body.error?.code;
     err.details = body.error?.details;
     err.retryAfter = Number(res.headers.get('Retry-After')) || null; // detik, untuk 429
+    // Sesi admin habis/dicabut saat sedang bekerja: kembali ke halaman login
+    if (res.status === 401 && path.startsWith('/admin')) window.location.assign('/dapur');
     throw err;
   }
   return res.status === 204 ? null : res.json();
