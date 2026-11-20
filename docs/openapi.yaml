@@ -1402,7 +1402,7 @@ paths:
       tags: [Admin - Tambahan]
       summary: Rekap keuangan harian atau mingguan
       description: |
-        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Pesanan `dibatalkan` tidak dihitung.
+        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Omzet hanya dari pesanan `diproses` dan `selesai`.
         **Kolom `RecapRow` masih usulan**; difinalkan bersama DS di minggu 3.
       security:
         - cookieAuth: []
@@ -2103,7 +2103,7 @@ components:
           maxLength: 100
         phone:
           type: string
-          description: Nomor HP Indonesia (divalidasi Joi).
+          description: Boleh kosong. Nomor HP Indonesia, diawali 08, 62, atau +62. Disimpan sebagai 62… (divalidasi Joi).
           example: '081234567890'
         pay_timing:
           $ref: '#/components/schemas/PayTiming'
