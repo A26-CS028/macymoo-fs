@@ -12,9 +12,6 @@ const { httpError } = require('../../middleware/errorHandler');
 
 const router = express.Router();
 
-// Hanya admin yang sudah masuk (selain itu 401, uji 9).
-router.use(requireAdmin);
-
 async function createMaclabOrder(body, adminId) {
   const client = await pool.connect();
   try {
@@ -168,8 +165,9 @@ async function createMaclabOrder(body, adminId) {
   }
 }
 
-// Dipasang di /admin/orders, jadi path di sini '/'.
-router.post('/', validate(maclabOrderCreate), async (req, res, next) => {
+// Dipasang di /admin/orders bersama routes/admin/orders.js. requireAdmin per route, bukan router.use,
+// supaya request lain ke /admin/orders tidak dicek dua kali (setiap cek = satu query ke admin_users).
+router.post('/', requireAdmin, validate(maclabOrderCreate), async (req, res, next) => {
   try {
     let result;
     for (let attempt = 1; ; attempt++) {

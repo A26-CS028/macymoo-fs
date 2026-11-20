@@ -2159,6 +2159,7 @@ components:
                 maximum: 500
               option_ids:
                 type: array
+                maxItems: 5
                 items:
                   type: integer
                 description: Id `menu_options` milik menu itu; harga disalin server saat pesan.
