@@ -2,7 +2,10 @@
 -- Berisi dua view, keduanya hanya angka dan tanggal: tanpa nama, HP, alamat, token, atau kode pesanan.
 --   recap_orders     : satu baris per pesanan (grand_total, paid_net, outstanding).
 --   recap_deliveries : satu baris per pengiriman (omzet mingguan menurut delivery_date, aturan D02).
--- Pesanan dibatalkan tidak dihitung. Rumus sama dengan services/pricing.js:
+-- Omzet hanya dari pesanan diproses dan selesai: menunggu_konfirmasi bisa berisi spam yang belum
+-- ditolak Nabila (KF 12), menunggu_pembayaran belum pasti jadi, dibatalkan bukan omzet.
+-- recap_orders tetap memuat menunggu_* (tanpa dibatalkan) untuk tagihan terbuka; saring kolom status
+-- bila menjumlahkan omzet dari view itu. Rumus sama dengan services/pricing.js:
 --   line_total  = qty * (unit_price + jumlah extra_price opsi item itu)
 --   grand_total = subtotal + ongkir semua pengiriman - diskon
 --   paid_net    = (dp + pelunasan) - refund
@@ -74,4 +77,4 @@ SELECT
   ), 0)::int AS subtotal
 FROM deliveries d
 JOIN orders o ON o.id = d.order_id
-WHERE o.status <> 'dibatalkan';
+WHERE o.status IN ('diproses', 'selesai');
