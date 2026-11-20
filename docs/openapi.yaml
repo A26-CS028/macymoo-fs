@@ -2678,7 +2678,8 @@ components:
         context:
           type: string
           minLength: 1
-          description: Menu, harga, dan aturan dari database (disusun Express). Tanpa data pesanan.
+          maxLength: 8000
+          description: Menu, harga, dan aturan dari database (disusun Express). Tanpa data pesanan. Lebih dari 8000 karakter ditolak FastAPI (422).
     MooBotChatResponse:
       type: object
       required: [reply]
