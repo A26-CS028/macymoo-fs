@@ -66,7 +66,7 @@ async function createMaclabOrder(body, adminId) {
         const key = options.get(o.menu_option_id).option_group ?? `id:${o.menu_option_id}`;
         if (seen.has(key)) {
           throw httpError(400, 'VALIDATION_ERROR', 'Data tidak valid', [
-            { field: `items[${i}].option_ids`, message: `Pilih paling banyak satu opsi untuk ${key}` },
+            { field: `items.${i}.option_ids`, message: `Pilih paling banyak satu opsi untuk ${key}` },
           ]);
         }
         seen.add(key);

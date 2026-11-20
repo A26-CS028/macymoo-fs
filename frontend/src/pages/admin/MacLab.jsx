@@ -252,7 +252,7 @@ export default function MacLab() {
                   inputMode="tel"
                   className={inputCls}
                   value={phone}
-                  placeholder="6281234567890"
+                  placeholder="081234567890"
                   onChange={(e) => setPhone(e.target.value)}
                 />
                 {errors.phone && <p className={errCls}>{errors.phone}</p>}
@@ -324,8 +324,8 @@ export default function MacLab() {
                       value={d.delivery_date}
                       onChange={(e) => setDelivery(i, { delivery_date: e.target.value })}
                     />
-                    {errors[`deliveries[${i}].delivery_date`] && (
-                      <p className={errCls}>{errors[`deliveries[${i}].delivery_date`]}</p>
+                    {errors[`deliveries.${i}.delivery_date`] && (
+                      <p className={errCls}>{errors[`deliveries.${i}.delivery_date`]}</p>
                     )}
                   </div>
                   <div>
@@ -357,8 +357,8 @@ export default function MacLab() {
                         value={d.shipping_fee}
                         onChange={(e) => setDelivery(i, { shipping_fee: e.target.value })}
                       />
-                      {errors[`deliveries[${i}].shipping_fee`] && (
-                        <p className={errCls}>{errors[`deliveries[${i}].shipping_fee`]}</p>
+                      {errors[`deliveries.${i}.shipping_fee`] && (
+                        <p className={errCls}>{errors[`deliveries.${i}.shipping_fee`]}</p>
                       )}
                     </div>
                   )}
@@ -376,7 +376,7 @@ export default function MacLab() {
                       value={d.address}
                       onChange={(e) => setDelivery(i, { address: e.target.value })}
                     />
-                    {errors[`deliveries[${i}].address`] && <p className={errCls}>{errors[`deliveries[${i}].address`]}</p>}
+                    {errors[`deliveries.${i}.address`] && <p className={errCls}>{errors[`deliveries.${i}.address`]}</p>}
                   </div>
                 )}
               </div>
@@ -400,7 +400,7 @@ export default function MacLab() {
 
             {items.map((it, i) => {
               const menu = it.item_type === 'menu' ? menuById.get(Number(it.menu_id)) : null
-              const err = (f) => errors[`items[${i}].${f}`]
+              const err = (f) => errors[`items.${i}.${f}`]
               return (
                 <div key={i} className="space-y-3 rounded-lg border border-abu-label p-3">
                   <div className="flex items-center justify-between">

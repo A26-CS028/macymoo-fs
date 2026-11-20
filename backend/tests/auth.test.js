@@ -89,10 +89,10 @@ test('error pg (punya code, tanpa status) tetap disembunyikan', () => {
 test('PricingError dibalas 400 dengan details', () => {
   const res = { status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; } };
   const { PricingError } = require('../src/services/pricing');
-  errorHandler(new PricingError('Menu tidak ditemukan', [{ field: 'items[0].menu_id', message: 'Menu tidak ditemukan' }]), {}, res, () => {});
+  errorHandler(new PricingError('Menu tidak ditemukan', [{ field: 'items.0.menu_id', message: 'Menu tidak ditemukan' }]), {}, res, () => {});
   assert.strictEqual(res.statusCode, 400);
   assert.strictEqual(res.body.error.code, 'VALIDATION_ERROR');
-  assert.strictEqual(res.body.error.details[0].field, 'items[0].menu_id');
+  assert.strictEqual(res.body.error.details[0].field, 'items.0.menu_id');
 });
 
 test('admin yang sudah dihapus ditolak 401 walau tokennya masih berlaku', async () => {
