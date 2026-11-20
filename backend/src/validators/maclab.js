@@ -75,7 +75,7 @@ const item = Joi.object({
     otherwise: Joi.number().integer().min(0).max(10000000).required().label('Harga item'),
   }),
   qty: Joi.number().integer().min(1).max(200).required().label('Jumlah'),
-  option_ids: Joi.array().items(Joi.number().integer().positive()).default([]).label('Opsi'),
+  option_ids: Joi.array().items(Joi.number().integer().positive()).max(5).default([]).label('Opsi'), // 5 = jumlah option_group
   note: Joi.string().trim().max(500).allow('').label('Catatan'),
 });
 
