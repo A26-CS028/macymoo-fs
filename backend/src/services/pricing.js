@@ -32,7 +32,7 @@ function resolveItems(items, catalog) {
   if (!Array.isArray(items) || items.length === 0) fail('Pesanan harus berisi minimal satu item', 'items')
 
   return items.map((item, i) => {
-    const at = (f) => `items[${i}].${f}`
+    const at = (f) => `items.${i}.${f}`
     if (!Number.isSafeInteger(item.qty) || item.qty < 1) fail('qty minimal 1', at('qty'))
     const optionIds = item.option_ids ?? []
     const type = item.item_type ?? 'menu'
@@ -90,7 +90,7 @@ function computeTotals({ items, deliveries, discount = 0, payments = [], status 
   const per_delivery = deliveries.map((d, idx) => {
     let fee
     if (d.method === 'ambil_sendiri') {
-      if (d.shipping_fee != null && d.shipping_fee !== 0) fail('Ambil Sendiri tidak dikenai ongkir', `deliveries[${idx}].shipping_fee`)
+      if (d.shipping_fee != null && d.shipping_fee !== 0) fail('Ambil Sendiri tidak dikenai ongkir', `deliveries.${idx}.shipping_fee`)
       fee = 0
     } else if (d.method === 'antar_nabila') {
       if (d.shipping_fee == null) {
@@ -99,20 +99,20 @@ function computeTotals({ items, deliveries, discount = 0, payments = [], status 
       } else if (isRupiah(d.shipping_fee)) {
         fee = d.shipping_fee
       } else {
-        fail('Ongkir harus Rupiah bulat', `deliveries[${idx}].shipping_fee`)
+        fail('Ongkir harus Rupiah bulat', `deliveries.${idx}.shipping_fee`)
       }
     } else {
-      fail('Cara antar tidak dikenal', `deliveries[${idx}].method`)
+      fail('Cara antar tidak dikenal', `deliveries.${idx}.method`)
     }
     const subtotal = items.filter((it) => it.delivery_index === idx).reduce((s, it) => s + it.line_total, 0)
     return { delivery_index: idx, subtotal, shipping_fee: fee }
   })
 
-  for (const it of items) {
+  items.forEach((it, i) => {
     if (!Number.isInteger(it.delivery_index) || it.delivery_index < 0 || it.delivery_index >= deliveries.length) {
-      fail('delivery_index di luar daftar pengiriman', 'items.delivery_index')
+      fail('delivery_index di luar daftar pengiriman', `items.${i}.delivery_index`)
     }
-  }
+  })
 
   const subtotal = items.reduce((s, it) => s + it.line_total, 0)
   const shipping_total = per_delivery.reduce((s, d) => s + d.shipping_fee, 0)

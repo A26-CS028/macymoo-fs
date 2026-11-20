@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const { isValidDate, todayJakarta } = require('../utils/date');
+const { phone } = require('./order');
 
 const messages = {
   'any.required': '{#label} wajib diisi',
@@ -80,15 +81,7 @@ const item = Joi.object({
 
 const maclabOrderCreate = Joi.object({
   customer_name: Joi.string().trim().min(1).max(100).required().label('Nama'),
-  // Format 62 tanpa + dan tanpa 0 (sama dengan format wa.me). Boleh kosong.
-  phone: Joi.string()
-    .trim()
-    .allow('')
-    .pattern(/^628[0-9]{8,12}$/)
-    .label('Nomor HP')
-    .messages({
-      'string.pattern.base': 'Nomor HP ditulis dengan awalan 62, tanpa + atau 0. Contoh: 6281234567890',
-    }),
+  phone: phone.allow(''),
   pay_timing: Joi.string().valid('di_muka', 'setelah_kirim').required().label('Waktu bayar'),
   discount: Joi.number().integer().min(0).default(0).label('Diskon'),
   deliveries: Joi.array().min(1).max(10).items(delivery).required().label('Pengiriman'),

@@ -195,3 +195,18 @@ test('Semua angka hasil adalah bilangan bulat', () => {
   }
   assert.equal(totals.grand_total, 3 * (27000 + 3000 + 5000) + 15000 - 1000) // 119000
 })
+
+test('kunci field PricingError memakai format titik yang sama dengan Joi', () => {
+  const fieldOf = (input) => {
+    try {
+      calculateOrder(input, catalog)
+    } catch (err) {
+      assert.ok(err instanceof PricingError)
+      return err.details[0].field
+    }
+    assert.fail('seharusnya ditolak')
+  }
+  assert.equal(fieldOf({ items: [{ delivery_index: 0, item_type: 'menu', menu_id: 99, qty: 1 }], deliveries: [pickup] }), 'items.0.menu_id')
+  assert.equal(fieldOf({ items: [{ delivery_index: 3, item_type: 'menu', menu_id: 1, qty: 1 }], deliveries: [pickup] }), 'items.0.delivery_index')
+  assert.equal(fieldOf({ items: [{ delivery_index: 0, item_type: 'menu', menu_id: 1, qty: 1 }], deliveries: [{ method: 'ambil_sendiri', shipping_fee: 5000 }] }), 'deliveries.0.shipping_fee')
+})
