@@ -1507,8 +1507,9 @@ paths:
       description: |
         Catatan kosong atau tanda strip tidak dikirim ke model (Express yang menyaring).
         Bila layanan gagal, Express tetap menyimpan dan menampilkan catatan asli tanpa label.
-        Daftar nama label final belum disepakati (DS dan AI bersama Nabila, minggu 1);
-        kunci `scores` mengikuti daftar itu.
+        Daftar label final (dikonfirmasi Nabila 13 Nov 2026, KF 9.6), urutan tetap: `saus_terpisah`, `alergi`,
+        `kurangi_bahan`, `tambah_bahan`, `kemasan`, `alat_makan`, `waktu_antar`, `titip_antar`.
+        Hasil `items` mengikuti urutan request. 503 berarti model tidak bisa dimuat.
       security:
         - internalSecret: []
       requestBody:
@@ -1689,7 +1690,7 @@ components:
                 items:
                   type: object
     InternalUnavailable:
-      description: Semua model gagal menjawab
+      description: Layanan AI tidak tersedia (MooBot - semua model Gemini gagal; MooLabel - model tidak bisa dimuat)
       content:
         application/json:
           schema:
@@ -2642,7 +2643,7 @@ components:
       properties:
         model_version:
           type: string
-          example: linsvm-v1
+          example: linsvm-v2
         items:
           type: array
           items:
@@ -2653,11 +2654,14 @@ components:
                 type: integer
               labels:
                 type: array
+                description: Label dengan skor di atas 0,5, urutan sesuai daftar label. Bisa kosong.
                 items:
                   type: string
-                example: [alergi, saus_terpisah]
+                example: [saus_terpisah, alergi]
               scores:
                 type: object
+                description: Selalu 8 label, urutan tetap, nilai 0-1 dibulatkan 4 desimal.
+                required: [saus_terpisah, alergi, kurangi_bahan, tambah_bahan, kemasan, alat_makan, waktu_antar, titip_antar]
                 additionalProperties:
                   type: number
                   minimum: 0
@@ -2666,7 +2670,11 @@ components:
                   saus_terpisah: 0.91
                   alergi: 0.87
                   kurangi_bahan: 0.08
+                  tambah_bahan: 0.05
                   kemasan: 0.03
+                  alat_makan: 0.04
+                  waktu_antar: 0.02
+                  titip_antar: 0.02
     MooBotChatRequest:
       type: object
       required: [message, context]
