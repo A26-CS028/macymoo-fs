@@ -3,6 +3,7 @@ const pool = require('../../db/pool');
 const { calculateOrder } = require('../../services/pricing');
 const { publicToken, orderCode } = require('../../services/token');
 const { waLink } = require('../../services/waLink');
+const { labelItems } = require('../../services/aiClient');
 const rateLimit = require('../../middleware/rateLimit');
 const validate = require('../../middleware/validate');
 const verifyTurnstile = require('../../middleware/turnstile');
@@ -176,6 +177,8 @@ router.post(
           throw err;
         }
       }
+      // ditunggu sebelum membalas: di Vercel proses berhenti setelah respons terkirim
+      await labelItems(result.items.map((it) => ({ order_item_id: it.id, note: it.note })));
       res.status(201).json(result);
     } catch (err) {
       next(err);
