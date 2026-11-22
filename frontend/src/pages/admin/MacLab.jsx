@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
+import { todayJakarta } from '../../utils/date'
 
 // MacLab: Nabila mengisi pesanan kolaborasi / mendadak langsung di dasbor.
 // Harga item menu dihitung server. Total di layar ini hanya pratinjau.
@@ -20,8 +21,6 @@ const btnPrimaryCls =
   'rounded-lg bg-ungu-gelap px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50'
 const errCls = 'mt-1 text-xs text-red-700'
 const labelCls = 'block text-sm font-semibold'
-
-const todayJakarta = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
 
 const newDelivery = () => ({ delivery_date: todayJakarta(), method: 'antar_nabila', address: '', shipping_fee: '' })
 const newItem = (delivery_index = 0) => ({
