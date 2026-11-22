@@ -3,6 +3,10 @@ const env = {
   frontendOrigin: process.env.FRONTEND_ORIGIN,
   jwtSecret: process.env.JWT_SECRET,
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
+  // Layanan AI boleh tidak aktif (uji 13), jadi tidak ikut dicek di bawah.
+  aiServiceUrl: process.env.AI_SERVICE_URL,
+  aiInternalSecret: process.env.AI_INTERNAL_SECRET,
+  aiTimeoutMs: Number(process.env.AI_TIMEOUT_MS) || 3000,
 };
 
 // Gagal saat start, bukan 500 di setiap login dan pesanan.
