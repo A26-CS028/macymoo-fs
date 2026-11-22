@@ -13,5 +13,6 @@ router.use('/admin/orders', require('./admin/orders'));
 router.use(require('./public/menus'));
 router.use(require('./public/closedDates'));
 router.use(require('./public/orders'));
+router.use(require('./public/moobot'));
 
 module.exports = router;

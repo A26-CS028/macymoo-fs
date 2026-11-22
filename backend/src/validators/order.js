@@ -79,4 +79,9 @@ const publicOrderCreate = Joi.object({
   website: Joi.string().valid('').label('website').messages({ 'any.only': 'Permintaan tidak valid' }), // honeypot
 }).prefs({ errors: { wrap: { label: false } }, messages });
 
-module.exports = { phone, publicOrderCreate };
+const moobotChat = Joi.object({
+  message: Joi.string().trim().min(1).max(500).required().label('Pesan'),
+  turnstile_token: Joi.string().min(1).required().label('Verifikasi keamanan'),
+}).prefs({ errors: { wrap: { label: false } }, messages });
+
+module.exports = { phone, publicOrderCreate, moobotChat };
