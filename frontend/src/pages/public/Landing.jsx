@@ -16,7 +16,14 @@ import menuMobile from '../../assets/landing/menu-mobile.webp'
 import gelombang from '../../assets/landing/gelombang.svg'
 import iconArrow from '../../assets/landing/icon-arrow-right.svg'
 
-const TEKS_PUTAR = ['Intip semua varian', 'Cek varian rasa', 'Pilih favoritmu', 'Harga mulai Rp25.000', 'Dibuat fresh setiap hari']
+// Animasi teks-putar (tailwind.config.js) dibuat untuk tepat 5 baris.
+const teksPutar = (menus) => [
+  'Intip semua varian',
+  'Cek varian rasa',
+  'Pilih favoritmu',
+  menus.length ? `Harga mulai ${rupiah(Math.min(...menus.map((m) => m.price)))}` : 'Cek harga di menu',
+  'Dibuat fresh setiap hari',
+]
 
 // Posisi foto di "Sorotan Menu" (Figma). Slot 0 = menu aktif; slot lain foto buram di sekitarnya.
 // box = kotak luar (ukuran setelah diputar), img = ukuran foto sebelum diputar.
@@ -83,6 +90,7 @@ function Hero({ menus }) {
   }, [menus.length])
 
   const current = menus[active]
+  const teks = teksPutar(menus)
 
   return (
     <section className="relative h-[788px] overflow-hidden bg-kuning lg:h-[680px]">
@@ -105,7 +113,7 @@ function Hero({ menus }) {
             <a href="#menu" className="h-6 w-[169px] overflow-hidden text-center text-[15px] font-bold italic leading-6 text-ungu-gelap lg:text-left">
               <span className="sr-only">Lihat semua menu</span>
               <span className="flex animate-teks-putar flex-col" aria-hidden="true">
-                {[...TEKS_PUTAR, TEKS_PUTAR[0]].map((t, i) => <span key={i} className="whitespace-nowrap">{t}</span>)}
+                {[...teks, teks[0]].map((t, i) => <span key={i} className="whitespace-nowrap">{t}</span>)}
               </span>
             </a>
           </div>

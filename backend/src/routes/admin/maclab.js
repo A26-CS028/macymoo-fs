@@ -172,7 +172,7 @@ router.post('/', requireAdmin, validate(maclabOrderCreate), async (req, res, nex
     let result;
     for (let attempt = 1; ; attempt++) {
       try {
-        result = await createMaclabOrder(req.body, req.admin?.id ?? null);
+        result = await createMaclabOrder(req.body, req.admin.id);
         break;
       } catch (err) {
         if (err.code === '23505' && attempt < 3) continue; // kode atau token bentrok: ulang

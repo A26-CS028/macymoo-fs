@@ -100,7 +100,7 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
       method: form.method,
       ...(antar && { address: form.address.trim() }),
       // shortcut: desain punya satu catatan per pesanan, kontrak menyimpan catatan per item;
-      // catatan ditempel ke item pertama sampai kontrak punya catatan level pesanan (bahas dengan Rama).
+      // catatan ditempel ke item pertama sampai kontrak punya catatan level pesanan.
       items: lines.map((l, i) => ({ menu_id: l.menu.id, qty: l.qty, option_ids: l.opts.map((o) => o.id), ...(i === 0 && note && { note }) })),
       agree_rules: true,
       turnstile_token: token,

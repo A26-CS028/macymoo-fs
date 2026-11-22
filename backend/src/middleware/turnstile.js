@@ -19,6 +19,7 @@ async function verifyTurnstile(req, res, next) {
     if (!data.success) return next(failed());
     next();
   } catch (err) {
+    console.error('Turnstile siteverify gagal:', err.message);
     next(failed());
   }
 }

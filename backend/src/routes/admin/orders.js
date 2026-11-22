@@ -8,21 +8,13 @@ const { httpError } = require('../../middleware/errorHandler');
 const { computeTotals } = require('../../services/pricing');
 const { nextStatus, RESCHEDULABLE } = require('../../services/orderStatus');
 const { waLink } = require('../../services/waLink');
+const { payDeadline, isOverdue } = require('../../services/paymentDeadline');
 const { confirmOrder, rescheduleOrder, cancelOrder, listQuery } = require('../../validators/adminOrder');
 
 const router = express.Router();
 router.use(requireAdmin);
 // id di luar batas INTEGER Postgres = pasti tidak ada (tanpa ini query gagal jadi 500)
 router.param('id', (req, res, next, id) => (Number(id) > 2147483647 ? next(httpError(404, 'NOT_FOUND', 'Pesanan tidak ditemukan')) : next()));
-
-const PAY_WINDOW_MS = 4 * 60 * 60 * 1000; // batas bayar 4 jam setelah Kirim Tagihan (KF 6)
-
-// Batas bayar dan tanda lewat batas dihitung saat dibaca, tanpa cron (KF 11).
-function payDeadline(o) {
-  if (o.pay_timing !== 'di_muka' || !o.invoice_sent_at) return null;
-  return new Date(new Date(o.invoice_sent_at).getTime() + PAY_WINDOW_MS);
-}
-const isOverdue = (o) => o.status === 'menunggu_pembayaran' && !!payDeadline(o) && payDeadline(o) < new Date();
 
 // Total pesanan lewat modul harga yang sama dengan pembuatan pesanan.
 // Antar Nabila yang belum dikonfirmasi = ongkir belum diisi (shipping_pending).

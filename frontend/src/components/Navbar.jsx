@@ -9,8 +9,7 @@ const LINKS = [
   { href: '/aturan', label: 'Aturan & Privasi' },
 ]
 
-// shortcut: ikon garis di bawah digambar ulang (bukan aset Figma) karena kuota MCP Figma habis
-// saat mengambil desain mobile; ganti dengan aset Figma bila kuota tersedia.
+// shortcut: ikon garis digambar ulang, ganti dengan aset Figma bila sudah diekspor.
 const Svg = ({ children, className = 'size-6' }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
     strokeLinejoin="round" className={className} aria-hidden="true">{children}</svg>
@@ -33,7 +32,6 @@ function Logo() {
   )
 }
 
-// MooBot (widget) dikerjakan minggu 3; tombol sudah tampil sesuai desain.
 function MooBotButton({ onClick }) {
   return (
     <button type="button" onClick={onClick}
