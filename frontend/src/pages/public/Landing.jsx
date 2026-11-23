@@ -9,6 +9,7 @@ import Navbar from '../../components/Navbar'
 import MenuCard from '../../components/MenuCard'
 import Footer from '../../components/Footer'
 import Reviews from '../../components/Reviews'
+import MooBotWidget from '../../components/MooBotWidget'
 import heroDesktop from '../../assets/landing/hero-desktop.webp'
 import heroMobile from '../../assets/landing/hero-mobile.webp'
 import menuDesktop from '../../assets/landing/menu-desktop.webp'
@@ -155,6 +156,7 @@ export default function Landing() {
   const [status, setStatus] = useState('loading') // loading | ready | error
   const [cart, setCart] = useSessionState('mm-keranjang', {}) // { [menuId]: qty }, dipakai juga di /pesan
   const [, setLastOrder] = useSessionState('mm-pesanan-terakhir', null)
+  const [mooBot, setMooBot] = useState(false)
   const navigate = useNavigate()
 
   function loadMenus() {
@@ -184,7 +186,8 @@ export default function Landing() {
 
   return (
     <div className={`bg-krem font-sans text-ungu-gelap ${porsi ? 'pb-[92px] lg:pb-0' : ''}`}>
-      <Navbar />
+      <Navbar onMooBot={() => setMooBot(true)} />
+      {mooBot && <MooBotWidget menus={menus} onClose={() => setMooBot(false)} />}
       <main>
         <Hero menus={menus} />
         <Reviews />
