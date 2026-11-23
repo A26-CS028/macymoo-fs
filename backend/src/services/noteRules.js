@@ -10,8 +10,7 @@ const NEGASI = /\b(?:jangan|jgn|gak|ga|nggak|ngga|tidak|tanpa)\b[^,.;!?]*$/i;
 const LAWAN_AYAM = { dada: 'paha', paha: 'dada' };
 
 const flag = (message) => ({ code: 'note_conflict', message });
-// pg mengembalikan NUMERIC/BIGINT sebagai string ("3000.00"), jadi ubah ke angka dulu.
-const rp = (n) => `Rp${Math.round(Number(n)).toLocaleString('id-ID')}`;
+const rp = require('../utils/rupiah');
 
 function noteFlags({ note, chosen = [], menuOptions = [] }) {
   const text = typeof note === 'string' ? note.trim() : '';

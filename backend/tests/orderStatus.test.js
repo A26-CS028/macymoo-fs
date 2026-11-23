@@ -1,4 +1,5 @@
-// KF uji #7: jalankan tiap baris tabel transisi; lompatan (mis. Menunggu Konfirmasi -> Selesai) ditolak 409.
+// KF uji #7: jalankan tiap baris tabel transisi; perpindahan di luar tabel ditolak 409.
+// Bayar dan Selesai (termasuk lompatan Menunggu Konfirmasi -> Selesai) diuji di paymentRules dan fulfillmentRules.
 // Plus validasi permintaan dasbor pesanan (konfirmasi, jadwal ulang, batal).
 const { test } = require('node:test');
 const assert = require('node:assert');
@@ -11,22 +12,17 @@ test('setiap baris tabel transisi KF bagian 5 berhasil', () => {
   assert.strictEqual(nextStatus('menunggu_konfirmasi', 'confirm', { pay_timing: 'di_muka' }), 'menunggu_pembayaran');
   assert.strictEqual(nextStatus('menunggu_konfirmasi', 'confirm', { pay_timing: 'setelah_kirim' }), 'diproses');
   assert.strictEqual(nextStatus('menunggu_konfirmasi', 'cancel'), 'dibatalkan');
-  assert.strictEqual(nextStatus('menunggu_pembayaran', 'pay'), 'diproses');
   assert.strictEqual(nextStatus('menunggu_pembayaran', 'cancel'), 'dibatalkan');
   assert.strictEqual(nextStatus('diproses', 'cancel'), 'dibatalkan');
-  assert.strictEqual(nextStatus('diproses', 'complete'), 'selesai');
 });
 
 test('perpindahan di luar tabel ditolak 409 INVALID_STATUS_TRANSITION', () => {
   const ditolak = [
-    ['menunggu_konfirmasi', 'complete'], // lompatan dari kasus uji 7
-    ['menunggu_konfirmasi', 'pay'],
     ['menunggu_pembayaran', 'confirm'],
     ['diproses', 'confirm'],
     ['selesai', 'cancel'],
     ['dibatalkan', 'cancel'],
     ['dibatalkan', 'confirm'],
-    ['selesai', 'complete'],
   ];
   for (const [from, event] of ditolak) {
     assert.throws(() => nextStatus(from, event), (e) => e.status === 409 && e.code === 'INVALID_STATUS_TRANSITION' && /tidak bisa/.test(e.message), `${from} -> ${event}`);

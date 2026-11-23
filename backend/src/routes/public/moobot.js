@@ -20,7 +20,7 @@ const ATURAN = `ATURAN
 - Pembatalan dan jadwal ulang dilakukan Nabila lewat WhatsApp.`;
 const MAX_CONTEXT = 8000; // batas FastAPI (MooBotChatRequest)
 
-const rp = (n) => `Rp${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+const rp = require('../../utils/rupiah');
 
 // Menu dan harga dari database (KF 9.4), tanpa data pesanan.
 async function buildContext() {

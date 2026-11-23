@@ -2,13 +2,7 @@
 // invoice_no disimpan tanpa -v2; revisi ada di kolom revision (001_init.sql).
 // Fungsi DB harus dipanggil di dalam transaksi dengan baris pesanan sudah dikunci (withOrder).
 const { httpError } = require('../middleware/errorHandler');
-
-const TZ = 'Asia/Jakarta';
-
-function jakartaDate(now = new Date()) {
-  // en-CA menghasilkan YYYY-MM-DD
-  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
-}
+const { todayJakarta } = require('../utils/date');
 
 const formatInvoiceNo = (date, seq) => `INV/${date.replaceAll('-', '')}/MYM/${String(seq).padStart(3, '0')}`;
 const displayNo = (invoiceNo, revision) => (revision > 1 ? `${invoiceNo}-v${revision}` : invoiceNo);
@@ -46,7 +40,7 @@ async function insertInvoice(db, orderId, invoiceNo, revision, issuedAt) {
 async function issueInvoice(db, orderId, now = new Date()) {
   const existing = await latestInvoice(db, orderId);
   if (existing) return { ...existing, display_no: displayNo(existing.invoice_no, existing.revision), created: false };
-  const date = jakartaDate(now);
+  const date = todayJakarta(now);
   const invoice = await insertInvoice(db, orderId, await nextInvoiceNo(db, date), 1, date);
   return { ...invoice, created: true };
 }
@@ -55,7 +49,7 @@ async function issueInvoice(db, orderId, now = new Date()) {
 async function reviseInvoice(db, orderId, now = new Date()) {
   const latest = await latestInvoice(db, orderId);
   if (!latest) throw httpError(409, 'INVOICE_NOT_ISSUED', 'Invoice belum pernah diterbitkan, tidak ada yang bisa direvisi');
-  return insertInvoice(db, orderId, latest.invoice_no, latest.revision + 1, jakartaDate(now));
+  return insertInvoice(db, orderId, latest.invoice_no, latest.revision + 1, todayJakarta(now));
 }
 
-module.exports = { jakartaDate, formatInvoiceNo, displayNo, fileName, nextInvoiceNo, issueInvoice, reviseInvoice };
+module.exports = { formatInvoiceNo, displayNo, fileName, nextInvoiceNo, issueInvoice, reviseInvoice };

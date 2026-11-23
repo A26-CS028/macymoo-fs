@@ -9,6 +9,7 @@ const { computeTotals } = require('../../services/pricing');
 const { nextStatus, RESCHEDULABLE } = require('../../services/orderStatus');
 const { waLink } = require('../../services/waLink');
 const { payDeadline, isOverdue } = require('../../services/paymentDeadline');
+const { displayNo } = require('../../services/invoiceNumber');
 const { confirmOrder, rescheduleOrder, cancelOrder, listQuery } = require('../../validators/adminOrder');
 
 const router = express.Router();
@@ -166,10 +167,7 @@ async function loadDetail(db, id) {
       note_flags: [],
     })),
     payments: payments.rows,
-    invoices: invoices.rows.map((i) => ({
-      ...i,
-      display_no: i.revision > 1 ? `${i.invoice_no}-v${i.revision}` : i.invoice_no,
-    })),
+    invoices: invoices.rows.map((i) => ({ ...i, display_no: displayNo(i.invoice_no, i.revision) })),
     events: events.rows,
     totals: totalsOf(o, deliveries, items, payments.rows),
   };
