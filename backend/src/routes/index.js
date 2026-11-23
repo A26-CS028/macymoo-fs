@@ -12,6 +12,7 @@ router.use('/admin/orders', require('./admin/orders'));
 
 router.use(require('./public/menus'));
 router.use(require('./public/closedDates'));
+router.use('/admin/kitchen', require('./admin/kitchen'));
 router.use(require('./public/orders'));
 router.use(require('./public/moobot'));
 
