@@ -77,6 +77,11 @@ test('field asing dibuang', () => {
   assert.equal('admin' in ok({ ...lengkap, admin: true }), false);
 });
 
+test('pesan error berbahasa Indonesia dengan label', () => {
+  const { error } = settingsUpdate.validate({ bank_name: 'a'.repeat(61), qris_image_url: 'https://x.com/' + 'a'.repeat(500) }, opts);
+  assert.deepEqual(error.details.map((d) => d.message), ['Nama bank maksimal 60 karakter', 'Gambar QRIS maksimal 500 karakter']);
+});
+
 test('rowsToSettings: key hilang atau NULL menjadi null, key asing diabaikan', () => {
   const s = rowsToSettings([
     { key: 'bank_name', value: 'BCA' },
