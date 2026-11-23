@@ -128,28 +128,28 @@ async function loadDetail(db, id) {
   const o = rows[0];
   if (!o) throw httpError(404, 'NOT_FOUND', 'Pesanan tidak ditemukan');
 
-  const [deliveries, items, opts, labels, payments, invoices, events] = await Promise.all([
-    loadDeliveries(db, [id]),
-    loadItems(db, [id]),
-    db.query(
-      `SELECT oio.order_item_id, oio.menu_option_id, mo.name, mo.option_group, oio.extra_price
-         FROM order_item_options oio JOIN menu_options mo ON mo.id = oio.menu_option_id
-         JOIN order_items oi ON oi.id = oio.order_item_id WHERE oi.order_id = $1 ORDER BY mo.id`,
-      [id]
-    ),
-    db.query(
-      `SELECT l.order_item_id, l.label, l.model_version FROM order_item_labels l
-         JOIN order_items oi ON oi.id = l.order_item_id WHERE oi.order_id = $1`,
-      [id]
-    ),
-    db.query('SELECT id, type, method, amount, paid_at FROM payments WHERE order_id = $1 ORDER BY paid_at, id', [id]),
-    db.query('SELECT id, invoice_no, revision, issued_at::text FROM invoices WHERE order_id = $1 ORDER BY revision', [id]),
-    db.query(
-      `SELECT id, event_type, from_status, to_status, reason, delivery_id, old_date::text, new_date::text, admin_id, created_at
-         FROM order_events WHERE order_id = $1 ORDER BY created_at, id`,
-      [id]
-    ),
-  ]);
+  // Berurutan, bukan Promise.all: db bisa client transaksi withOrder, dan pg tidak mengizinkan
+  // query paralel di satu client (sekarang peringatan, error mulai pg@9).
+  const deliveries = await loadDeliveries(db, [id]);
+  const items = await loadItems(db, [id]);
+  const opts = await db.query(
+    `SELECT oio.order_item_id, oio.menu_option_id, mo.name, mo.option_group, oio.extra_price
+       FROM order_item_options oio JOIN menu_options mo ON mo.id = oio.menu_option_id
+       JOIN order_items oi ON oi.id = oio.order_item_id WHERE oi.order_id = $1 ORDER BY mo.id`,
+    [id]
+  );
+  const labels = await db.query(
+    `SELECT l.order_item_id, l.label, l.model_version FROM order_item_labels l
+       JOIN order_items oi ON oi.id = l.order_item_id WHERE oi.order_id = $1`,
+    [id]
+  );
+  const payments = await db.query('SELECT id, type, method, amount, paid_at FROM payments WHERE order_id = $1 ORDER BY paid_at, id', [id]);
+  const invoices = await db.query('SELECT id, invoice_no, revision, issued_at::text FROM invoices WHERE order_id = $1 ORDER BY revision', [id]);
+  const events = await db.query(
+    `SELECT id, event_type, from_status, to_status, reason, delivery_id, old_date::text, new_date::text, admin_id, created_at
+       FROM order_events WHERE order_id = $1 ORDER BY created_at, id`,
+    [id]
+  );
 
   const deadline = payDeadline(o);
   return {
