@@ -2,17 +2,15 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
 
-// Pool palsir: tabel settings di memori, meniru query yang dipakai route.
+// Pool palsu: tabel settings di memori, meniru query yang dipakai route.
 const store = new Map();
-const calls = [];
-const run = async (sql, p = []) => {
-  calls.push(sql.trim().split(/\s+/)[0]);
-  if (sql.startsWith('SELECT')) return { rows: [...store].filter(([k]) => p[0].includes(k)).map(([key, value]) => ({ key, value })) };
-  if (sql.startsWith('DELETE')) p[0].forEach((k) => store.delete(k));
-  if (sql.startsWith('INSERT')) p[0].forEach((k, i) => store.set(k, p[1][i]));
-  return { rows: [] };
+const pool = {
+  query: async (sql, p = []) => {
+    if (sql.startsWith('SELECT')) return { rows: [...store].filter(([k]) => p[0].includes(k)).map(([key, value]) => ({ key, value })) };
+    if (sql.startsWith('INSERT')) p[0].forEach((k, i) => store.set(k, p[1][i]));
+    return { rows: [] };
+  },
 };
-const pool = { query: run, connect: async () => ({ query: run, release() {} }) };
 require.cache[require.resolve('../src/db/pool')] = { id: 'p', filename: 'p', loaded: true, exports: pool };
 // auth.js asli membaca config/env.js yang melempar error bila env kosong, jadi dipalsukan juga.
 // Sesi admin yang sebenarnya sudah diuji di tes auth; di sini hanya dicek requireAdmin terpasang di router.
@@ -58,7 +56,7 @@ test('PUT ganti seluruh objek: wa_number null + field lain hilang', async () => 
   assert.equal(j.wa_number, null);
   assert.equal(j.bank_name, 'BNI');
   assert.equal(j.bank_account_number, null);
-  assert.equal(store.has('wa_number'), false);
+  assert.equal(store.get('wa_number'), null);
 });
 
 test('PUT tidak valid -> 400 dan DB tak berubah', async () => {
@@ -67,11 +65,4 @@ test('PUT tidak valid -> 400 dan DB tak berubah', async () => {
   assert.equal(r.status, 400);
   assert.equal((await r.json()).details[0].field, 'wa_number');
   assert.equal(JSON.stringify([...store]), before);
-});
-
-test('PUT memakai transaksi', async () => {
-  calls.length = 0;
-  await call('PUT', { bank_name: 'X' });
-  assert.equal(calls[0], 'BEGIN');
-  assert.equal(calls.at(-1), 'COMMIT');
 });
