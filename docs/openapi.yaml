@@ -844,6 +844,7 @@ paths:
         `revision` + 1, tampil berakhiran `-v2`). Dibutuhkan kasus uji 5. Memakai `POST`
         (bukan `GET`) karena mengubah data dan tidak boleh terpicu oleh pemuatan ulang halaman.
         Ditolak (409, `ORDER_NOT_CONFIRMED`) untuk pesanan `menunggu_konfirmasi`.
+        Ditolak (409, `INVOICE_NOT_ISSUED`) bila invoice belum pernah diterbitkan lewat `GET invoice.pdf`.
       security:
         - cookieAuth: []
       parameters:
@@ -1402,8 +1403,12 @@ paths:
       tags: [Admin - Tambahan]
       summary: Rekap keuangan harian atau mingguan
       description: |
-        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Omzet hanya dari pesanan `diproses` dan `selesai`.
-        **Kolom `RecapRow` masih usulan**; difinalkan bersama DS di minggu 3.
+        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Hanya pesanan `diproses` dan `selesai`;
+        filter status dipasang di query karena `recap_orders` juga memuat `menunggu_*`.
+        Omzet dan ongkir per pengiriman dari `recap_deliveries` (dikelompokkan per `delivery_date`, D02);
+        diskon, pembayaran, dan sisa tagihan per pesanan dari `recap_orders`.
+        **[Usulan Rama, menunggu persetujuan Daffa]** kolom per pesanan dikelompokkan menurut
+        `first_delivery_date`.
       security:
         - cookieAuth: []
       parameters:
@@ -2591,7 +2596,13 @@ components:
           format: date-time
     RecapRow:
       type: object
-      required: [period_start, period_end, orders_count, subtotal, shipping_total, discount_total, grand_total, paid_net, outstanding]
+      description: |
+        Pilihan (b), aturan DS D01/D02 (disepakati di FS #38). `subtotal` dan `shipping_total`
+        per pengiriman dari view `recap_deliveries`, dikelompokkan menurut `delivery_date`
+        (Senin-Minggu). `orders_count`, `discount_total`, `paid_net`, dan `outstanding` per pesanan
+        dari view `recap_orders`. Keduanya hanya pesanan `diproses` dan `selesai`.
+        Tidak ada `grand_total`: angka itu menggabungkan dua sumber dengan dasar periode berbeda.
+      required: [period_start, period_end, orders_count, subtotal, shipping_total, discount_total, paid_net, outstanding]
       properties:
         period_start:
           type: string
@@ -2601,18 +2612,24 @@ components:
           format: date
         orders_count:
           type: integer
+          description: Jumlah pesanan pada periode (dari `recap_orders`).
         subtotal:
-          $ref: '#/components/schemas/Rupiah'
+          allOf:
+            - $ref: '#/components/schemas/Rupiah'
+          description: Omzet (D01) = nilai item; ongkir tidak termasuk, diskon tidak dikurangi.
         shipping_total:
-          $ref: '#/components/schemas/Rupiah'
+          allOf:
+            - $ref: '#/components/schemas/Rupiah'
+          description: Ongkir, hanya info (tidak masuk omzet).
         discount_total:
           $ref: '#/components/schemas/Rupiah'
-        grand_total:
-          $ref: '#/components/schemas/Rupiah'
         paid_net:
-          $ref: '#/components/schemas/Rupiah'
+          allOf:
+            - $ref: '#/components/schemas/Rupiah'
+          description: (dp + pelunasan) - refund.
         outstanding:
-          $ref: '#/components/schemas/Rupiah'
+          allOf:
+            - $ref: '#/components/schemas/Rupiah'
           description: Tagihan belum terbayar.
 
     # ---- Internal FastAPI -------------------------------------------------

@@ -290,3 +290,5 @@ router.post('/:id(\\d+)/cancel', validate(cancelOrder), async (req, res, next) =
 });
 
 module.exports = router;
+module.exports.withOrder = withOrder;
+module.exports.loadDetail = loadDetail;
