@@ -8,6 +8,7 @@ router.use('/auth', require('./admin/auth'));
 router.use('/admin/menus', require('./admin/menus'));
 router.use('/admin/uploads', require('./admin/uploads'));
 router.use('/admin/orders', require('./admin/maclab'));
+router.use('/admin', require('./admin/fulfillment'));
 router.use('/admin/orders', require('./admin/payments'));
 router.use('/admin/orders', require('./admin/orders'));
 
