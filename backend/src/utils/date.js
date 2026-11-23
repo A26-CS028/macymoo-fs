@@ -1,7 +1,7 @@
 const TZ = 'Asia/Jakarta';
 
-function todayJakarta() {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date()); // YYYY-MM-DD
+function todayJakarta(now = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(now); // YYYY-MM-DD
 }
 
 function addDays(dateStr, n) {

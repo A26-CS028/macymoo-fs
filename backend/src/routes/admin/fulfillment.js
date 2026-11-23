@@ -2,6 +2,7 @@
 // Dipasang di /admin; requireAdmin per route (sesi admin hanya dicek sekali).
 const express = require('express');
 const pool = require('../../db/pool');
+const { frontendOrigin } = require('../../config/env');
 const validate = require('../../middleware/validate');
 const { requireAdmin } = require('../../middleware/auth');
 const { httpError } = require('../../middleware/errorHandler');
@@ -13,7 +14,7 @@ const { withOrder, loadDetail } = require('./orders'); // transaksi + detail yan
 
 const router = express.Router();
 const MAX_INT = 2147483647;
-const rp = (n) => `Rp${n.toLocaleString('id-ID')}`;
+const rp = require('../../utils/rupiah');
 const notFound = (what) => httpError(404, 'NOT_FOUND', `${what} tidak ditemukan`);
 
 // Kirim Tagihan: catat waktu; bayar di muka memulai batas 4 jam. Status tidak berubah.
@@ -30,7 +31,7 @@ router.post('/orders/:id(\\d+)/send-bill', requireAdmin, async (req, res, next) 
         [o.id, req.admin.id, o.status]
       );
       const { totals } = await loadDetail(db, o.id);
-      const base = (process.env.FRONTEND_ORIGIN || '').replace(/\/$/, ''); // domain macymoo-web
+      const base = (frontendOrigin || '').replace(/\/$/, ''); // domain macymoo-web
       const nama = o.customer_name ? ` ${o.customer_name}` : '';
       const link = base ? ` Detail dan cara bayar: ${base}/s/${o.public_token}` : '';
       return {

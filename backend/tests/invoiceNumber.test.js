@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { jakartaDate, formatInvoiceNo, displayNo, fileName, nextInvoiceNo, issueInvoice, reviseInvoice } = require('../src/services/invoiceNumber');
+const { todayJakarta } = require('../src/utils/date');
+const { formatInvoiceNo, displayNo, fileName, nextInvoiceNo, issueInvoice, reviseInvoice } = require('../src/services/invoiceNumber');
 
 // db palsu: mengembalikan respons berurutan dan mencatat query
 function fakeDb(responses) {
@@ -17,8 +18,8 @@ test('format nomor invoice dan nomor tampil revisi', () => {
 });
 
 test('tanggal invoice memakai zona Asia/Jakarta (UTC+7), bukan UTC', () => {
-  assert.equal(jakartaDate(new Date('2026-11-20T16:59:00Z')), '2026-11-20');
-  assert.equal(jakartaDate(new Date('2026-11-20T17:01:00Z')), '2026-11-21');
+  assert.equal(todayJakarta(new Date('2026-11-20T16:59:00Z')), '2026-11-20');
+  assert.equal(todayJakarta(new Date('2026-11-20T17:01:00Z')), '2026-11-21');
 });
 
 test('nomor berikutnya: urutan dimulai 001 dan lanjut dari yang terbesar; lock diambil dulu', async () => {

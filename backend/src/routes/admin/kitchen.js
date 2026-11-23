@@ -1,6 +1,7 @@
 // Daftar masak per tanggal (Rama, KF 9.2). Hanya baca: tidak mengubah data.
 const express = require('express');
 const pool = require('../../db/pool');
+const { aiServiceUrl } = require('../../config/env');
 const { requireAdmin } = require('../../middleware/auth');
 const { httpError } = require('../../middleware/errorHandler');
 const { kitchenQuery } = require('../../validators/kitchen');
@@ -12,7 +13,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
   try {
     const { error, value } = kitchenQuery.validate(req.query, { abortEarly: false, stripUnknown: true });
     if (error) throw httpError(400, 'VALIDATION_ERROR', 'Data tidak valid', error.details.map((d) => ({ field: d.path.join('.'), message: d.message })));
-    const moolabelActive = Boolean(process.env.AI_SERVICE_URL);
+    const moolabelActive = Boolean(aiServiceUrl);
 
     const deliveries = (await pool.query(
       `SELECT d.id AS delivery_id, d.method, o.*

@@ -39,9 +39,8 @@ test('keju: "jangan banyak-banyak" tidak ditandai', () => {
   assert.deepEqual(noteFlags({ note: 'jangan terlalu banyak keju', chosen: [], menuOptions: mackster }), []);
 });
 
-test('harga keju dari database bertipe string tetap diformat Rupiah', () => {
-  // pg mengembalikan kolom NUMERIC/BIGINT sebagai string
-  const f = noteFlags({ note: 'kejunya dibanyakin', chosen: [], menuOptions: [opt('keju', 'Tambah keju', '3000.00')] });
+test('tanda keju menyebut harga opsi dalam Rupiah', () => {
+  const f = noteFlags({ note: 'kejunya dibanyakin', chosen: [], menuOptions: [opt('keju', 'Tambah keju', 3000)] });
   assert.equal(f.length, 1);
   assert.match(f[0].message, /\(\+Rp3\.000\)/);
 });

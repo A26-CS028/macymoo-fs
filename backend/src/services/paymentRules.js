@@ -3,7 +3,7 @@
 // Hasil: to_status (status pesanan baru) dan pay_status (null = tidak berubah).
 const { httpError } = require('../middleware/errorHandler');
 
-const rp = (n) => `Rp${n.toLocaleString('id-ID')}`;
+const rp = require('../utils/rupiah');
 const invalidAmount = (message) => httpError(400, 'VALIDATION_ERROR', 'Data tidak valid', [{ field: 'amount', message }]);
 const conflict = (message) => httpError(409, 'INVALID_STATUS_TRANSITION', message);
 
