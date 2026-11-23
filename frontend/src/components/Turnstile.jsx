@@ -19,7 +19,8 @@ function loadScript() {
 
 // onToken(token) dipanggil saat lolos; onToken(null) saat kedaluwarsa atau gagal.
 // Ganti prop `resetKey` untuk meminta token baru (token sekali pakai).
-export default function Turnstile({ onToken, resetKey, className }) {
+// appearance 'interaction-only': widget hanya tampil bila Cloudflare perlu interaksi (dipakai MooBot).
+export default function Turnstile({ onToken, resetKey, className, appearance = 'always' }) {
   const box = useRef(null)
   const cb = useRef(onToken)
   cb.current = onToken
@@ -38,6 +39,7 @@ export default function Turnstile({ onToken, resetKey, className }) {
           sitekey: SITE_KEY,
           language: 'id',
           theme: 'light',
+          appearance,
           callback: (t) => cb.current(t),
           'expired-callback': () => cb.current(null),
           'error-callback': () => cb.current(null),

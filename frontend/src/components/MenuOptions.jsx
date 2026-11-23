@@ -66,7 +66,7 @@ export default function MenuOptions({ menu, sel, onChange }) {
                 </button>
               ))}
               {/* Lebar tetap supaya baris tidak bergeser saat pratinjau/pilihan berganti */}
-              <span aria-hidden="true" className={`ml-1.5 w-[78px] text-sm font-bold ${shown ? 'text-[#dc2626]' : 'text-abu'} ${hover && hover !== level ? 'opacity-60' : ''}`}>
+              <span aria-hidden="true" className={`ml-1.5 min-w-[84px] whitespace-nowrap text-sm font-bold ${shown ? 'text-[#dc2626]' : 'text-abu'} ${hover && hover !== level ? 'opacity-60' : ''}`}>
                 {shown ? pedas[shown - 1].name : 'Tidak pedas'}
               </span>
             </div>

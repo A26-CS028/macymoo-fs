@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 
 // Modal dasbor (Figma: Modal — Konfirmasi/Jadwalkan Ulang/Batalkan). Di HP tampil sebagai sheet dari bawah.
 // Esc atau klik latar menutup; fokus dipindah ke dalam modal dan dikembalikan saat ditutup.
-export default function Modal({ title, subtitle, onClose, children, width = 'lg:w-[580px]', titleId = 'judul-modal', hideHeader }) {
+export default function Modal({ title, subtitle, onClose, children, width = 'lg:w-[580px]', titleId = 'judul-modal', hideHeader, boxClass }) {
   const box = useRef(null)
   const close = useRef(onClose)
   close.current = onClose
@@ -35,8 +35,8 @@ export default function Modal({ title, subtitle, onClose, children, width = 'lg:
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ungu-gelap/40 lg:items-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
-        className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[24px] bg-white px-5 pb-6 pt-2.5 text-ungu-gelap shadow-xl outline-none lg:rounded-[24px] lg:p-7 ${width}`}>
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e4dccb] lg:hidden" />
+        className={boxClass || `max-h-[92vh] w-full overflow-y-auto rounded-t-[24px] bg-white px-5 pb-6 pt-2.5 text-ungu-gelap shadow-xl outline-none lg:rounded-[24px] lg:p-7 ${width}`}>
+        {!boxClass && <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e4dccb] lg:hidden" />}
         {!hideHeader && (
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
