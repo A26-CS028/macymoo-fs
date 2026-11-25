@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
-import { labelTanggal } from '../../utils/date'
+import { labelTanggal, todayJakarta } from '../../utils/date'
 import { STATUS } from '../../components/admin/OrderTable'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import RescheduleDialog from '../../components/admin/RescheduleDialog'
@@ -143,7 +143,8 @@ export default function OrderDetail() {
                     ? <span className="rounded-full bg-[#dcfce7] px-3 py-1 text-xs font-bold text-[#16a34a]">Terkirim {d.delivered_at && jam.format(new Date(d.delivered_at))}</span>
                     : o.status === 'diproses' && (
                       <button type="button" disabled={busy === `kirim-${d.id}`}
-                        onClick={() => aksi(`kirim-${d.id}`, `/admin/deliveries/${d.id}`, { method: 'PATCH', body: JSON.stringify({ delivery_status: 'terkirim' }) }, `Pengiriman ${labelTanggal(d.delivery_date).panjang} ditandai terkirim`)}
+                        onClick={() => (d.delivery_date <= todayJakarta() || window.confirm(`Tanggal kirimnya ${labelTanggal(d.delivery_date).panjang}, belum tiba. Tetap tandai terkirim?`))
+                          && aksi(`kirim-${d.id}`, `/admin/deliveries/${d.id}`, { method: 'PATCH', body: JSON.stringify({ delivery_status: 'terkirim' }) }, `Pengiriman ${labelTanggal(d.delivery_date).panjang} ditandai terkirim`)}
                         className={`${btn} h-9 bg-krem-field`}>Tandai Terkirim</button>
                     )}
                 </div>

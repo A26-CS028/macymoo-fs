@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
 import { todayJakarta } from '../../utils/date'
@@ -43,6 +44,7 @@ function fieldErrors(err) {
 
 export default function MacLab() {
   const [menus, setMenus] = useState(null)
+  const [closed, setClosed] = useState([])
   const [loadError, setLoadError] = useState('')
 
   const [customerName, setCustomerName] = useState('')
@@ -77,6 +79,7 @@ export default function MacLab() {
   }, [])
   useEffect(() => {
     load()
+    api('/closed-dates').then((r) => setClosed(r.closed_dates.map((c) => c.closed_date))).catch(() => {})
   }, [load])
 
   const menuById = useMemo(() => new Map((menus || []).map((m) => [m.id, m])), [menus])
@@ -325,6 +328,10 @@ export default function MacLab() {
                     />
                     {errors[`deliveries.${i}.delivery_date`] && (
                       <p className={errCls}>{errors[`deliveries.${i}.delivery_date`]}</p>
+                    )}
+                    {/* Admin boleh tetap mengirim di tanggal tutup (keputusan Nabila), tapi diberi tahu */}
+                    {closed.includes(d.delivery_date) && (
+                      <p className="mt-1 text-xs font-semibold text-[#d97706]">Tanggal ini ditutup di Pengaturan. Pastikan memang mau kirim di tanggal ini.</p>
                     )}
                   </div>
                   <div>
@@ -623,6 +630,9 @@ function CreatedCard({ order, onClose }) {
       <p className="text-sm">
         Status: <strong>{statusLabel[order.status] || order.status}</strong>
       </p>
+      <Link to={`/dapur/pesanan/${order.id}`} className="inline-block text-sm font-bold text-ungu underline">
+        Lihat detail pesanan (kirim tagihan, catat bayar)
+      </Link>
       <p className="text-sm">
         Total: <strong>{rupiah(order.totals.grand_total)}</strong> (subtotal {rupiah(order.totals.subtotal)}, ongkir{' '}
         {rupiah(order.totals.shipping_total)}
