@@ -1,36 +1,39 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const express = require('express');
+const jwt = require('jsonwebtoken');
 
-// Pool palsu: tabel settings di memori, meniru query yang dipakai route.
+process.env.JWT_SECRET = 'rahasia-uji-minimal-32-karakter-xx';
+process.env.DATABASE_URL = 'postgres://uji@localhost/uji';
+process.env.TURNSTILE_SECRET_KEY = 'rahasia-uji';
+process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
+
+// Pool palsu: tabel settings di memori, meniru query yang dipakai route; admin 7 selalu ada.
 const store = new Map();
 const pool = {
   query: async (sql, p = []) => {
+    if (sql.includes('admin_users')) return { rows: [{ id: 7, username: 'nabila' }] };
     if (sql.startsWith('SELECT')) return { rows: [...store].filter(([k]) => p[0].includes(k)).map(([key, value]) => ({ key, value })) };
     if (sql.startsWith('INSERT')) p[0].forEach((k, i) => store.set(k, p[1][i]));
     return { rows: [] };
   },
 };
 require.cache[require.resolve('../src/db/pool')] = { id: 'p', filename: 'p', loaded: true, exports: pool };
-// auth.js asli membaca config/env.js yang melempar error bila env kosong, jadi dipalsukan juga.
-// Sesi admin yang sebenarnya sudah diuji di tes auth; di sini hanya dicek requireAdmin terpasang di router.
-const requireAdmin = (req, res, next) => (req.headers['x-admin'] ? next() : res.status(401).json({ code: 'UNAUTHORIZED' }));
-require.cache[require.resolve('../src/middleware/auth')] = { id: 'a', filename: 'a', loaded: true, exports: { requireAdmin } };
 
-const router = require('../src/routes/admin/settings');
+// App dan requireAdmin asli, supaya tes 401 memeriksa middleware yang benar-benar dipasang.
+const app = require('../src/app');
+const { COOKIE_NAME } = require('../src/middleware/auth');
+
 let server, base;
 before(async () => {
-  const app = express();
-  app.use(express.json());
-  app.use('/admin/settings', router);
-  app.use((err, req, res, next) => res.status(err.status || 500).json({ code: err.code, details: err.details }));
   server = app.listen(0);
-  base = `http://127.0.0.1:${server.address().port}/admin/settings`;
+  await new Promise((resolve) => server.once('listening', resolve));
+  base = `http://127.0.0.1:${server.address().port}/api/v1/admin/settings`;
 });
 after(() => server.close());
 
+const cookie = `${COOKIE_NAME}=${jwt.sign({ sub: '7', username: 'nabila' }, process.env.JWT_SECRET)}`;
 const call = (method, body, admin = true) =>
-  fetch(base, { method, headers: { 'content-type': 'application/json', ...(admin ? { 'x-admin': '1' } : {}) }, body: body && JSON.stringify(body) });
+  fetch(base, { method, headers: { 'content-type': 'application/json', ...(admin ? { cookie } : {}) }, body: body && JSON.stringify(body) });
 
 test('requireAdmin terpasang: tanpa sesi -> 401', async () => {
   assert.equal((await call('GET', undefined, false)).status, 401);
@@ -63,6 +66,6 @@ test('PUT tidak valid -> 400 dan DB tak berubah', async () => {
   const before = JSON.stringify([...store]);
   const r = await call('PUT', { wa_number: '0812' });
   assert.equal(r.status, 400);
-  assert.equal((await r.json()).details[0].field, 'wa_number');
+  assert.equal((await r.json()).error.details[0].field, 'wa_number');
   assert.equal(JSON.stringify([...store]), before);
 });

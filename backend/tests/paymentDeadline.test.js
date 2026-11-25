@@ -60,6 +60,5 @@ test('isOverdue: hanya tanda, status pesanan tidak diubah', () => {
   const o = order({ invoice_sent_at: ago(5 * HOUR) });
   const before = JSON.stringify(o);
   assert.equal(isOverdue(o), true);
-  assert.equal(o.status, 'menunggu_pembayaran');
   assert.equal(JSON.stringify(o), before);
 });
