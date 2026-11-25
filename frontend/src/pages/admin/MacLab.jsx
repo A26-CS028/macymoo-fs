@@ -151,8 +151,8 @@ export default function MacLab() {
     <div className="mx-auto max-w-[1180px] pb-32 lg:pb-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-extrabold lg:text-[30px]">Form Pesanan Besar</h1>
-          <p className="text-sm font-medium text-abu">Untuk kafe, kantor, atau kolaborasi — satu invoice, beberapa tanggal kirim</p>
+          <h1 className="text-[26px] font-extrabold max-lg:hidden lg:text-[30px]">Form Pesanan Besar</h1>
+          <p className="text-sm font-medium text-abu max-lg:hidden">Untuk kafe, kantor, atau kolaborasi — satu invoice, beberapa tanggal kirim</p>
         </div>
       </div>
 

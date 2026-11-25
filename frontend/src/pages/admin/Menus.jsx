@@ -111,8 +111,8 @@ export default function Menus() {
     <div className={`mx-auto max-w-[1180px] ${kotor.length ? 'pb-28 lg:pb-10' : 'pb-10'}`}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-extrabold lg:text-[30px]">Kelola Menu & Harga</h1>
-          <p className="text-sm font-medium text-abu">Ubah harga, ganti foto, dan atur status Tersedia / Habis</p>
+          <h1 className="text-[26px] font-extrabold max-lg:hidden lg:text-[30px]">Kelola Menu & Harga</h1>
+          <p className="text-sm font-medium text-abu max-lg:hidden">Ubah harga, ganti foto, dan atur status Tersedia / Habis</p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setDetail('baru')} className="h-11 rounded-[10px] bg-white px-4 text-[15px] font-bold">+ Tambah menu</button>
