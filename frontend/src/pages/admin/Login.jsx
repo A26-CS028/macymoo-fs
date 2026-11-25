@@ -103,10 +103,17 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-3 text-sm text-abu"
+              className="absolute inset-y-0 right-3 flex items-center px-1 text-abu hover:text-ungu-gelap"
               aria-pressed={showPassword}
+              aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+              title={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
             >
-              {showPassword ? 'Sembunyikan' : 'Lihat'}
+              {/* Mata = tampilkan; mata dicoret = sembunyikan lagi */}
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {showPassword
+                  ? <path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A9.8 9.8 0 0112 5c5 0 9 4.5 10 7a13 13 0 01-3.1 4.2M6.6 6.6C4.4 8 2.8 10.2 2 12c1 2.5 5 7 10 7 1.8 0 3.4-.6 4.8-1.4" />
+                  : <path d="M2 12c1-2.5 5-7 10-7s9 4.5 10 7c-1 2.5-5 7-10 7S3 14.5 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z" />}
+              </svg>
             </button>
           </div>
 
