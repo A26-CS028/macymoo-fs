@@ -4,7 +4,9 @@ import { rupiah } from '../utils/format'
 import { todayJakarta, addDays, labelTanggal } from '../utils/date'
 import { menuPhoto, fallbackToLocal } from '../utils/menuPhoto'
 import { useSessionState } from '../hooks/useSessionState'
-import MenuOptions, { optionSummary, selectedOptions } from './MenuOptions'
+import { optionSummary, selectedOptions } from './MenuOptions'
+import RacikanList from './RacikanList'
+import { racikanOf, MAX_RACIKAN } from '../utils/racikan'
 import Turnstile from './Turnstile'
 import iconMinus from '../assets/landing/icon-minus-abu.svg'
 import iconPlus from '../assets/landing/icon-plus-ungu.svg'
@@ -17,6 +19,7 @@ import iconArrowGelap from '../assets/landing/icon-arrow-gelap.svg'
 // Form pre-order tanpa login (Figma: bagian "Pre-order" desktop dan "Mobile — Pesananmu").
 // Harga di sini hanya pratinjau; server menghitung ulang dari database.
 const NOTE_MAX = 200
+const MAX_ITEMS = 20 // batas items di POST /orders
 const PHONE_RE = /^(?:\+62|62|0)8\d{8,12}$/ // sama dengan backend/src/validators/order.js
 const EMPTY_FORM = { customer_name: '', phone: '', delivery_date: '', method: 'antar_nabila', address: '', note: '', agree_rules: false }
 
@@ -34,10 +37,10 @@ function FieldError({ id, children }) {
 }
 
 export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
-  const [opsi, setOpsi] = useSessionState('mm-opsi', {})
+  const [opsi, setOpsi] = useSessionState('mm-opsi', {}) // { [menuId]: [{ sel, note, qty }] }, lihat utils/racikan
   const [form, setForm] = useSessionState('mm-form', EMPTY_FORM)
   const [website, setWebsite] = useState('') // honeypot
-  const [activeId, setActiveId] = useState(null)
+  const [activeKey, setActiveKey] = useState(null) // "menuId:indeksRacikan"; null = racikan 1 menu pertama
   const [closed, setClosed] = useState([])
   const [token, setToken] = useState(null)
   const [tsKey, setTsKey] = useState(0)
@@ -52,19 +55,37 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e })); setErrors((x) => ({ ...x, [k]: '' })); setMessage('') }
 
   const lines = useMemo(() => menus.filter((m) => cart[m.id]).map((m) => {
-    const qty = cart[m.id]
-    const opts = selectedOptions(m, opsi[m.id])
-    const extra = opts.reduce((a, o) => a + o.extra_price, 0)
-    return { menu: m, qty, opts, base: m.price * qty, extras: opts.filter((o) => o.extra_price), total: qty * (m.price + extra) }
+    const rs = racikanOf(cart[m.id], opsi[m.id]).map((r) => {
+      const opts = selectedOptions(m, r.sel)
+      const extra = opts.reduce((a, o) => a + o.extra_price, 0)
+      return { ...r, menu: m, opts, base: m.price * r.qty, extras: opts.filter((o) => o.extra_price), total: r.qty * (m.price + extra) }
+    })
+    return { menu: m, qty: cart[m.id], rs, total: rs.reduce((a, r) => a + r.total, 0) }
   }), [menus, cart, opsi])
   const subtotal = lines.reduce((a, l) => a + l.total, 0)
-  const active = activeId && cart[activeId] ? activeId : lines[0]?.menu.id
+  const itemCount = lines.reduce((a, l) => a + l.rs.length, 0)
+  const [activeMenu, activeIdx] = (activeKey && cart[activeKey.split(':')[0]] ? activeKey : `${lines[0]?.menu.id}:0`).split(':').map(Number)
+
+  // Ubah racikan satu menu; jumlah dihitung ulang dari keranjang supaya selalu cocok
+  const editRacikan = (id, fn) => setOpsi((o) => ({ ...o, [id]: fn(racikanOf(cart[id], o[id])).map(({ sel, note, qty }) => ({ sel, note, qty })) }))
+  function splitPorsi(id) {
+    const n = racikanOf(cart[id], opsi[id]).length
+    editRacikan(id, (rs) => [...rs, { sel: rs[0].sel, qty: 1 }]) // mulai dari pilihan racikan 1, tinggal diubah
+    setActiveKey(`${id}:${n}`)
+  }
+  function changeRacikanQty(id, i, delta) {
+    const qty = racikanOf(cart[id], opsi[id])[i].qty + delta
+    editRacikan(id, (rs) => (qty > 0 ? rs.map((r, j) => (j === i ? { ...r, qty } : r)) : rs.filter((_, j) => j !== i))) // 0 = gabung ke racikan 1
+    if (qty <= 0) setActiveKey(`${id}:0`)
+  }
 
   const today = todayJakarta()
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
   const antar = form.method === 'antar_nabila'
 
   function changeQty(id, delta) {
+    // menu keluar dari keranjang: racikannya ikut dibuang supaya tidak muncul lagi saat ditambah ulang
+    if (delta < 0 && cart[id] <= 1) setOpsi((o) => { const next = { ...o }; delete next[id]; return next })
     setCart((c) => {
       const qty = Math.min(50, Math.max(0, (c[id] || 0) + delta))
       const next = { ...c, [id]: qty }
@@ -99,9 +120,12 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
       delivery_date: form.delivery_date,
       method: form.method,
       ...(antar && { address: form.address.trim() }),
-      // shortcut: desain punya satu catatan per pesanan, kontrak menyimpan catatan per item;
-      // catatan ditempel ke item pertama sampai kontrak punya catatan level pesanan.
-      items: lines.map((l, i) => ({ menu_id: l.menu.id, qty: l.qty, option_ids: l.opts.map((o) => o.id), ...(i === 0 && note && { note }) })),
+      // Satu racikan = satu item. shortcut: kontrak belum punya catatan level pesanan, jadi catatan umum
+      // ditempel di depan catatan item pertama sampai kontrak punya kolomnya.
+      items: lines.flatMap((l) => l.rs).map((r, i) => {
+        const itemNote = [i === 0 && note, r.note?.trim()].filter(Boolean).join(' — ')
+        return { menu_id: r.menu.id, qty: r.qty, option_ids: r.opts.map((o) => o.id), ...(itemNote && { note: itemNote }) }
+      }),
       agree_rules: true,
       turnstile_token: token,
       website,
@@ -159,16 +183,18 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
         )}
         <FieldError>{errors.items}</FieldError>
         <ul className="flex flex-col gap-5 lg:mt-6">
-          {lines.map(({ menu, qty, total }) => (
+          {lines.map(({ menu, qty, total, rs }) => (
             <li key={menu.id}>
               <div className="flex gap-3.5">
-                <button type="button" onClick={() => setActiveId(menu.id)} aria-expanded={active === menu.id}
+                <button type="button" onClick={() => setActiveKey(`${menu.id}:0`)} aria-expanded={activeMenu === menu.id}
                   aria-label={`Ubah opsi ${menu.name}`} className="flex flex-1 gap-3.5 text-left">
                   <img src={menuPhoto(menu)} onError={fallbackToLocal(menu)} alt="" className="size-[68px] shrink-0 object-contain" />
                   <span className="min-w-0">
                     <span className="block font-lilita text-xl leading-tight">{menu.name}</span>
                     <span className="mt-0.5 block text-[13px] font-medium leading-4 text-abu">
-                      {active === menu.id ? menu.description : optionSummary(menu, opsi[menu.id])}
+                      {rs.length > 1
+                        ? <span className="font-bold text-ungu">Dibedakan jadi {rs.length} racikan</span>
+                        : activeMenu === menu.id ? menu.description : optionSummary(menu, rs[0].sel)}
                     </span>
                   </span>
                 </button>
@@ -185,9 +211,14 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
                   </div>
                 </div>
               </div>
-              {active === menu.id && (
-                <MenuOptions menu={menu} sel={opsi[menu.id]} onChange={(sel) => setOpsi((o) => ({ ...o, [menu.id]: sel }))} />
-              )}
+              <RacikanList menu={menu} rs={rs} active={activeMenu === menu.id ? activeIdx : null}
+                onActive={(i) => setActiveKey(`${menu.id}:${i ?? -1}`)}
+                onSel={(i, sel) => editRacikan(menu.id, (x) => x.map((r, j) => (j === i ? { ...r, sel } : r)))}
+                onNote={(i, note) => editRacikan(menu.id, (x) => x.map((r, j) => (j === i ? { ...r, note } : r)))}
+                onQty={(i, d) => changeRacikanQty(menu.id, i, d)}
+                onSplit={() => splitPorsi(menu.id)}
+                canSplit={rs[0].qty >= 2 && rs.length < MAX_RACIKAN && itemCount < MAX_ITEMS}
+                splitHint={rs[0].qty < 2 ? (rs.length > 1 ? 'Tambah porsi dulu untuk racikan baru' : 'Tambah jadi 2 porsi atau lebih untuk membedakan') : null} />
             </li>
           ))}
         </ul>
@@ -282,14 +313,17 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
         <div className="hidden lg:block">
           <h3 id="judul-ringkasan" className="text-[22px] font-bold">Ringkasan</h3>
           <dl className="mt-4 flex flex-col gap-2.5 text-sm">
-            {lines.map((l) => (
-              <div key={l.menu.id} className="contents">
-                <div className="flex justify-between"><dt className="text-abu-label">{l.menu.name} ×{l.qty}</dt><dd className="font-bold">{rupiah(l.base)}</dd></div>
-                {l.extras.map((o) => (
-                  <div key={o.id} className="flex justify-between"><dt className="text-abu-label">{o.name}</dt><dd className="font-bold">{rupiah(o.extra_price * l.qty)}</dd></div>
+            {lines.flatMap((l) => l.rs.map((r, i) => (
+              <div key={`${l.menu.id}:${i}`} className="contents">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-abu-label">{l.menu.name} ×{r.qty}{l.rs.length > 1 && <span className="block text-xs">{optionSummary(l.menu, r.sel)}</span>}</dt>
+                  <dd className="font-bold">{rupiah(r.base)}</dd>
+                </div>
+                {r.extras.map((o) => (
+                  <div key={o.id} className="flex justify-between"><dt className="pl-3 text-abu-label">{o.name}</dt><dd className="font-bold">{rupiah(o.extra_price * r.qty)}</dd></div>
                 ))}
               </div>
-            ))}
+            )))}
           </dl>
           <p className="mt-5 font-lilita text-[44px] leading-tight text-kuning" aria-live="polite">{rupiah(subtotal)}</p>
           <p className="text-[13px] font-medium text-abu-label">{antar ? 'Belum termasuk ongkir' : 'Estimasi total, final setelah Nabila konfirmasi'}</p>
