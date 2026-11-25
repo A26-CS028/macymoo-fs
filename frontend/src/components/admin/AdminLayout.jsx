@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 const NAV = [
   { to: '/dapur/beranda', label: 'Beranda' },
   { to: '/dapur/pesanan', label: 'Pesanan' },
+  { to: '/dapur/masak', label: 'Masak' },
   { to: '/dapur/menu', label: 'Menu' },
   { to: '/dapur/maclab', label: 'MacLab' },
   { to: '/dapur/ulasan', label: 'Ulasan' },
@@ -31,7 +32,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-krem-field text-ungu-gelap">
-      <header className="flex items-center justify-between bg-white px-4 py-3 shadow-sm">
+      <header className="flex items-center justify-between bg-white px-4 py-3 shadow-sm print:hidden">
         <div className="flex items-center gap-4">
           <span className="font-bold">Macyourmoo</span>
         </div>
@@ -46,7 +47,7 @@ export default function AdminLayout() {
           </button>
         </div>
       </header>
-      <nav aria-label="Menu admin" className="flex gap-4 bg-white px-4 text-sm font-semibold shadow-sm">
+      <nav aria-label="Menu admin" className="flex gap-4 overflow-x-auto bg-white px-4 text-sm font-semibold shadow-sm print:hidden">
         {NAV.map((item) => (
           <NavLink key={item.to} to={item.to} className={navCls}>
             {item.label}
