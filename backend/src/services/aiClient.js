@@ -10,6 +10,7 @@ async function callAI(path, body, timeoutMs = env.aiTimeoutMs) {
       headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': env.aiInternalSecret || '' },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
+      redirect: 'error', // redirect akan mengirim ulang catatan + X-Internal-Secret ke host lain
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.json();

@@ -36,13 +36,15 @@ export default function RescheduleDialog({ orderId, onClose, onDone }) {
     if (!reason.trim()) return setError({ message: 'Alasan wajib diisi.' })
     // Jendela WhatsApp dibuka langsung saat diklik supaya tidak diblokir browser, lalu diarahkan setelah tersimpan
     const wa = notify && canNotify ? window.open('', '_blank') : null
+    if (wa) wa.opener = null // putus akses balik ke halaman admin sejak awal
     setSaving(true)
     try {
       const res = await api(`/admin/orders/${orderId}/reschedule`, {
         method: 'POST',
         body: JSON.stringify({ delivery_id: deliveryId, new_date: date, reason: reason.trim() }),
       })
-      if (wa && res.wa_link) { wa.opener = null; wa.location.href = res.wa_link } else wa?.close()
+      if (wa && res.wa_link) wa.location.href = res.wa_link
+      else wa?.close()
       onDone(res.order, `${res.order.order_code} dijadwalkan ulang ke ${labelTanggal(date).panjang}`)
     } catch (err) {
       wa?.close()

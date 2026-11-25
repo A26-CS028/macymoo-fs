@@ -34,3 +34,13 @@ test('FRONTEND_ORIGIN dan TURNSTILE_SECRET_KEY wajib', () => {
   assert.throws(() => loadEnv({ FRONTEND_ORIGIN: undefined }), /FRONTEND_ORIGIN/);
   assert.throws(() => loadEnv({ TURNSTILE_SECRET_KEY: undefined }), /TURNSTILE_SECRET_KEY/);
 });
+
+test('AI_SERVICE_URL wajib https (kecuali lokal) dan butuh AI_INTERNAL_SECRET', () => {
+  const S = 'x'.repeat(32);
+  assert.throws(() => loadEnv({ AI_SERVICE_URL: 'http://ai.contoh.com', AI_INTERNAL_SECRET: S }), /https/);
+  assert.throws(() => loadEnv({ AI_SERVICE_URL: 'http://localhost.contoh.com', AI_INTERNAL_SECRET: S }), /https/);
+  assert.throws(() => loadEnv({ AI_SERVICE_URL: 'https://ai.contoh.com', AI_INTERNAL_SECRET: undefined }), /AI_INTERNAL_SECRET/);
+  assert.ok(loadEnv({ AI_SERVICE_URL: 'https://ai.contoh.com', AI_INTERNAL_SECRET: S }));
+  assert.ok(loadEnv({ AI_SERVICE_URL: 'http://localhost:8000', AI_INTERNAL_SECRET: S }));
+  assert.ok(loadEnv({ AI_SERVICE_URL: undefined, AI_INTERNAL_SECRET: undefined }));
+});

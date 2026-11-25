@@ -14,6 +14,7 @@ const router = express.Router();
 
 async function createMaclabOrder(body, adminId) {
   const client = await pool.connect();
+  let broken; // ROLLBACK gagal = koneksi rusak, release(err) membuangnya dari pool
   try {
     await client.query('BEGIN');
 
@@ -116,10 +117,10 @@ async function createMaclabOrder(body, adminId) {
     await client.query('COMMIT');
     return orderId;
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    await client.query('ROLLBACK').catch((e) => { broken = e; });
     throw err;
   } finally {
-    client.release();
+    client.release(broken);
   }
 }
 

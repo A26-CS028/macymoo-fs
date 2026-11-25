@@ -18,7 +18,13 @@ function errorHandler(err, req, res, next) {
   // Hanya error dengan status eksplisit (httpError, body-parser) yang pesannya boleh sampai ke klien.
   // Error pg dan sistem juga punya err.code ('23505', 'ETIMEDOUT'), jadi code tidak bisa jadi penanda.
   const unexpected = !(err.status || err.statusCode);
-  if (unexpected) console.error(err);
+  // Jangan log err utuh: error pg membawa err.detail berisi nilai baris (bisa data pelanggan).
+  // Pola route, bukan URL asli, supaya token di path tidak ikut ter-log.
+  if (unexpected) {
+    console.error('[unexpected]', req.method, `${req.baseUrl}${req.route ? req.route.path : ''}`, {
+      name: err.name, code: err.code, constraint: err.constraint, table: err.table, stack: err.stack,
+    });
+  }
   res.status(status).json({
     error: {
       code: unexpected ? 'INTERNAL_ERROR' : err.code || DEFAULT_CODES[status] || 'INTERNAL_ERROR',

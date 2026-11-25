@@ -4,6 +4,11 @@ const router = express.Router();
 
 router.get('/health', (req, res) => res.json({ ok: true }));
 
+// Respons admin berisi data pelanggan: jangan disimpan di cache browser.
+router.use(['/auth', '/admin'], (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 router.use('/auth', require('./admin/auth'));
 router.use('/admin/menus', require('./admin/menus'));
 router.use('/admin/uploads', require('./admin/uploads'));
