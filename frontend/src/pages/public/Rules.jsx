@@ -24,7 +24,7 @@ const IKON = {
 
 const ATURAN = [
   ['kalender', 'Pre-Order H-1', 'Pesan paling lambat sehari sebelum tanggal kirim. Pesanan untuk hari ini lewat WhatsApp, keputusan Nabila.'],
-  ['jam', 'Bayar dalam 4 jam', 'Untuk bayar di muka: paling lambat 4 jam setelah tagihan dikirim. Lewat batas, pesanan dibatalkan.'],
+  ['jam', 'Bayar dalam 4 jam', 'Untuk bayar di muka: paling lambat 4 jam setelah tagihan dikirim. Lewat batas, Nabila bisa membatalkan pesanan.'],
   ['truk', 'Ongkir dikonfirmasi', 'Antar dihitung Nabila per alamat. Ambil sendiri Rp0, boleh pesan GoSend sendiri.'],
   ['ulang', 'Jadwal ulang & refund', 'Jika ada kendala, Nabila mengabari tanggal baru via WA. Tidak setuju: pesanan dibatalkan dan uang dikembalikan.'],
   ['dompet', 'Cara bayar', 'QRIS GoPay, transfer bank, atau tunai. DP tidak ada di form; bicarakan dengan Nabila lewat WA.'],
@@ -54,7 +54,11 @@ export default function Rules({ tab = 'aturan' }) {
   const navigate = useNavigate()
   const privasi = tab === 'privasi'
   // Dibuka di tab baru dari form: "Saya mengerti" menutup tab itu; selain itu kembali ke halaman sebelumnya
-  const mengerti = () => (window.opener ? window.close() : window.history.length > 1 ? navigate(-1) : navigate('/'))
+  function mengerti() {
+    if (window.history.length > 1) return navigate(-1)
+    window.close()
+    setTimeout(() => navigate('/'), 100) // tab tidak bisa ditutup skrip
+  }
 
   return (
     <div className="min-h-screen bg-krem font-sans text-ungu-gelap">

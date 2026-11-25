@@ -11,6 +11,7 @@ import Login from './pages/admin/Login.jsx'
 import MacLab from './pages/admin/MacLab.jsx'
 import Menus from './pages/admin/Menus.jsx'
 import Orders from './pages/admin/Orders.jsx'
+import Dashboard from './pages/admin/Dashboard.jsx'
 import OrderDetail from './pages/admin/OrderDetail.jsx'
 import Reviews from './pages/admin/Reviews.jsx'
 import Settings from './pages/admin/Settings.jsx'
@@ -31,7 +32,7 @@ export default function App() {
       <Route path="/dapur">
         <Route index element={<Login />} />
         <Route element={<AdminLayout />}>
-          <Route path="beranda" element={<p>Dashboard Operasional (segera)</p>} />
+          <Route path="beranda" element={<Dashboard />} />
           <Route path="pesanan" element={<Orders />} />
           <Route path="pesanan/:id" element={<OrderDetail />} />
           <Route path="ulasan" element={<Reviews />} />

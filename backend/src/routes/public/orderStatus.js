@@ -35,7 +35,7 @@ function toPublic(d, settings, review) {
   };
 }
 
-router.get('/orders/status/:token', rateLimit({ name: 'order_status', max: 60, windowMs: 10 * 60 * 1000 }), async (req, res, next) => {
+router.get('/orders/status/:token', rateLimit({ name: 'order_status', max: 300, windowMs: 10 * 60 * 1000 }) /* satu IP bisa dipakai banyak pelanggan (Wi-Fi kampus) */, async (req, res, next) => {
   try {
     const token = req.params.token;
     if (!/^[A-Za-z0-9_-]{32,64}$/.test(token)) throw notFound(); // bentuk salah: tidak perlu ke database
