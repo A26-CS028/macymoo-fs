@@ -6,6 +6,7 @@ import Login from './pages/admin/Login.jsx'
 import MacLab from './pages/admin/MacLab.jsx'
 import Menus from './pages/admin/Menus.jsx'
 import Orders from './pages/admin/Orders.jsx'
+import OrderDetail from './pages/admin/OrderDetail.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route element={<AdminLayout />}>
           <Route path="beranda" element={<p>Dashboard Operasional (segera)</p>} />
           <Route path="pesanan" element={<Orders />} />
+          <Route path="pesanan/:id" element={<OrderDetail />} />
           <Route path="maclab" element={<MacLab />} />
           <Route path="menu" element={<Menus />} />
         </Route>

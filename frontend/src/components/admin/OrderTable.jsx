@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { rupiah } from '../../utils/format'
 import { labelTanggal } from '../../utils/date'
 import { localPhoto } from '../../utils/menuPhoto'
@@ -21,6 +22,8 @@ const I = {
   silang: 'M6 6l12 12M18 6L6 18',
   truk: 'M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',
   tas: 'M6 8h12l-1 12H7L6 8zM9 8a3 3 0 016 0',
+  dompet: 'M3 7h15a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm0 0V6a2 2 0 012-2h11v3M16 13h1',
+  dokumen: 'M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5zM14 3v5h5M9 13h6M9 17h6',
 }
 
 // "Jum, 7 Nov" atau rentang "9–13 Nov" untuk pesanan beberapa pengiriman
@@ -36,9 +39,13 @@ export function menuLabel(o) {
   return o.items_summary.map((i) => `${i.qty}× ${i.name}`).join(', ')
 }
 
-// Aksi per status (KF 5): konfirmasi hanya dari Menunggu Konfirmasi; jadwal ulang & batal sampai Diproses.
-function aksiUntuk(status) {
+// Aksi per status (KF 5): konfirmasi hanya dari Menunggu Konfirmasi; jadwal ulang & batal sampai Diproses;
+// catat bayar setelah dikonfirmasi selama belum lunas; invoice setelah dikonfirmasi.
+const API = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/$/, '')
+function aksiUntuk(status, payStatus) {
   return {
+    bayar: ['menunggu_pembayaran', 'diproses'].includes(status) && payStatus !== 'lunas',
+    invoice: ['menunggu_pembayaran', 'diproses', 'selesai'].includes(status),
     konfirmasi: status === 'menunggu_konfirmasi',
     jadwal: ['menunggu_konfirmasi', 'menunggu_pembayaran', 'diproses'].includes(status),
     batal: ['menunggu_konfirmasi', 'menunggu_pembayaran', 'diproses'].includes(status),
@@ -84,10 +91,10 @@ export default function OrderTable({ orders, onAction }) {
         </thead>
         <tbody>
           {orders.map((o) => {
-            const a = aksiUntuk(o.status)
+            const a = aksiUntuk(o.status, o.pay_status)
             return (
               <tr key={o.id} className="[&>td]:px-4 [&>td]:py-4">
-                <td className="whitespace-nowrap font-bold text-ungu">{o.order_code}</td>
+                <td className="whitespace-nowrap font-bold text-ungu"><Link to={`/dapur/pesanan/${o.id}`} className="hover:underline">{o.order_code}</Link></td>
                 <td className="max-w-[200px] font-bold"><span className="line-clamp-2" title={o.customer_name || undefined}>{o.customer_name || <span className="font-medium text-abu">Dianonimkan</span>}</span></td>
                 <td className="max-w-[170px] text-xs font-medium">{menuLabel(o)}</td>
                 <td className="whitespace-nowrap text-xs font-medium">{kirimLabel(o.delivery_dates)}</td>
@@ -102,6 +109,14 @@ export default function OrderTable({ orders, onAction }) {
                     {a.konfirmasi && (
                       <button type="button" onClick={() => onAction('konfirmasi', o)} title="Konfirmasi" aria-label={`Konfirmasi ${o.order_code}`}
                         className="flex size-8 items-center justify-center rounded-lg bg-ungu text-white hover:bg-ungu-tua"><Ikon d={I.centang} /></button>
+                    )}
+                    {a.bayar && (
+                      <button type="button" onClick={() => onAction('bayar', o)} title="Catat pembayaran" aria-label={`Catat pembayaran ${o.order_code}`}
+                        className={`flex size-8 items-center justify-center rounded-lg ${o.status === 'menunggu_pembayaran' ? 'bg-[#2563eb] text-white hover:bg-[#1d4ed8]' : 'hover:bg-krem-field'}`}><Ikon d={I.dompet} /></button>
+                    )}
+                    {a.invoice && (
+                      <a href={`${API}/admin/orders/${o.id}/invoice.pdf`} target="_blank" rel="noopener" title="Invoice PDF" aria-label={`Invoice PDF ${o.order_code}`}
+                        className="flex size-8 items-center justify-center rounded-lg hover:bg-krem-field"><Ikon d={I.dokumen} /></a>
                     )}
                     {a.jadwal && (
                       <button type="button" onClick={() => onAction('jadwal', o)} title="Jadwalkan ulang" aria-label={`Jadwalkan ulang ${o.order_code}`}
@@ -122,13 +137,13 @@ export default function OrderTable({ orders, onAction }) {
       {/* HP dan tablet: kartu, dua kolom mulai 768px */}
       <ul className="grid gap-3 md:grid-cols-2 xl:hidden">
         {orders.map((o) => {
-          const a = aksiUntuk(o.status)
+          const a = aksiUntuk(o.status, o.pay_status)
           const [label, text, dot] = STATUS[o.status]
           const first = o.items_summary[0]?.name || ''
           return (
             <li key={o.id} className="flex flex-col rounded-[18px] bg-white p-4">
               <div className="flex items-center justify-between gap-2 text-[13px] font-bold">
-                <span className="text-ungu">{o.order_code}</span>
+                <Link to={`/dapur/pesanan/${o.id}`} className="text-ungu underline-offset-2 hover:underline">{o.order_code}</Link>
                 <span className={`inline-flex items-center gap-1.5 ${text}`}><span className={`size-1.5 rounded-full ${dot}`} />{label}</span>
               </div>
               <div className="mt-2 flex items-center gap-3">
@@ -142,6 +157,9 @@ export default function OrderTable({ orders, onAction }) {
               </div>
               {(a.konfirmasi || a.jadwal) && (
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-3 text-sm font-bold">
+                  {a.bayar && (
+                    <button type="button" onClick={() => onAction('bayar', o)} className={`col-span-2 flex h-10 items-center justify-center gap-2 rounded-[10px] ${o.status === 'menunggu_pembayaran' ? 'bg-[#2563eb] text-white' : 'bg-krem-field'}`}><Ikon d={I.dompet} />Catat pembayaran</button>
+                  )}
                   {a.konfirmasi
                     ? <button type="button" onClick={() => onAction('konfirmasi', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-ungu text-white"><Ikon d={I.centang} />Konfirmasi</button>
                     : <button type="button" onClick={() => onAction('jadwal', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-krem-field"><Ikon d={I.kalender} />Jadwal ulang</button>}

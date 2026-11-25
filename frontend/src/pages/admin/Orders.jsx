@@ -5,6 +5,7 @@ import OrderTable, { STATUS } from '../../components/admin/OrderTable'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import RescheduleDialog from '../../components/admin/RescheduleDialog'
 import CancelDialog from '../../components/admin/CancelDialog'
+import PaymentForm from '../../components/admin/PaymentForm'
 
 // Pesanan Masuk (Figma: Admin — Pesanan Masuk / Admin Mobile — Pesanan): daftar, cari, filter status,
 // lalu konfirmasi, jadwalkan ulang, atau batalkan lewat modal.
@@ -111,6 +112,7 @@ export default function Orders() {
       {modal?.jenis === 'konfirmasi' && <ConfirmDialog orderId={modal.order.id} onClose={close} onDone={done} />}
       {modal?.jenis === 'jadwal' && <RescheduleDialog orderId={modal.order.id} onClose={close} onDone={done} />}
       {modal?.jenis === 'batal' && <CancelDialog order={modal.order} onClose={close} onDone={done} />}
+      {modal?.jenis === 'bayar' && <PaymentForm orderId={modal.order.id} onClose={close} onDone={done} />}
     </div>
   )
 }
