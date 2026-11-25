@@ -51,6 +51,45 @@ test('POST MacLab tetap mengecek sesi admin', async () => {
   assert.strictEqual(adminChecks, 1);
 });
 
+test('POST MacLab membalas 201 dengan bentuk detail pesanan (OrderDetail)', async () => {
+  const saved = { query: pool.query, connect: pool.connect };
+  const order = {
+    id: 11, order_code: 'MYM-UJI', source: 'admin_form', customer_name: 'Kafe Contoh', phone: null, status: 'diproses',
+    pay_status: 'belum_bayar', pay_timing: 'setelah_kirim', discount: 0, invoice_sent_at: null, public_token: 'x', created_at: new Date(),
+  };
+  const delivery = { id: 11, order_id: 11, delivery_date: '2099-01-01', method: 'ambil_sendiri', shipping_fee: 0 };
+  pool.query = async (sql) => ({
+    rows: sql.includes('admin_users') ? [{ id: 7, username: 'nabila' }]
+      : sql.includes('FROM orders') ? [order]
+      : sql.includes('FROM deliveries') ? [delivery] : [],
+  });
+  pool.connect = async () => ({
+    query: async (sql) => ({
+      rows: sql.includes('FROM menus') ? [{ id: 1, name: 'Mackster', price: 35000, is_available: true }]
+        : sql.includes('RETURNING id') ? [{ id: 11 }] : [],
+    }),
+    release() {},
+  });
+  try {
+    const res = await fetch(`${base}/admin/orders`, {
+      method: 'POST',
+      headers: { Cookie: cookie(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_name: 'Kafe Contoh',
+        pay_timing: 'setelah_kirim',
+        deliveries: [{ delivery_date: '2099-01-01', method: 'ambil_sendiri' }],
+        items: [{ item_type: 'menu', menu_id: 1, qty: 5 }],
+      }),
+    });
+    const body = await res.json();
+    assert.strictEqual(res.status, 201, JSON.stringify(body));
+    for (const key of ['order_code', 'discount', 'payments', 'invoices', 'events', 'totals']) assert.ok(key in body, key);
+    assert.strictEqual(body.totals.per_delivery, undefined);
+  } finally {
+    Object.assign(pool, saved);
+  }
+});
+
 test('MacLab: option_ids per item paling banyak 5', () => {
   const body = {
     customer_name: 'Kafe Contoh',

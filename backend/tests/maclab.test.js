@@ -22,6 +22,11 @@ test('nomor HP MacLab diterima dalam format yang sama dengan form publik dan dis
   assert.deepStrictEqual(fields(check({ ...valid(), phone: '08abc123456' })), ['phone']);
 });
 
+test('diskon MacLab dibatasi Rp10.000.000, sama dengan konfirmasi pesanan', () => {
+  assert.strictEqual(check({ ...valid(), discount: 10000000 }).error, undefined);
+  assert.deepStrictEqual(fields(check({ ...valid(), discount: 10000001 })), ['discount']);
+});
+
 // Kunci ini dibaca MacLab.jsx untuk menampilkan error di baris pengiriman dan item.
 test('error per baris memakai kunci titik: deliveries.0.x dan items.0.x', () => {
   const r = check({

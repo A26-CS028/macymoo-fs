@@ -9,6 +9,7 @@ const validate = require('../../middleware/validate');
 const { requireAdmin } = require('../../middleware/auth');
 const { maclabOrderCreate } = require('../../validators/maclab');
 const { httpError } = require('../../middleware/errorHandler');
+const { loadDetail } = require('./orders');
 
 const router = express.Router();
 
@@ -35,7 +36,7 @@ async function createMaclabOrder(body, adminId) {
     const options = new Map(optRes.rows.map((o) => [o.id, o]));
 
     // hitung harga (lempar PricingError bila menu/opsi/delivery_index tidak sah)
-    const { items: priced, totals } = calculateOrder(
+    const { items: priced } = calculateOrder(
       {
         items: body.items.map((i) => ({
           delivery_index: i.delivery_index,
@@ -77,64 +78,34 @@ async function createMaclabOrder(body, adminId) {
 
     const orderRes = await client.query(
       `INSERT INTO orders (order_code, customer_name, phone, source, status, pay_timing, discount, public_token)
-       VALUES ($1, $2, $3, 'admin_form', $4, $5, $6, $7) RETURNING id, created_at`,
+       VALUES ($1, $2, $3, 'admin_form', $4, $5, $6, $7) RETURNING id`,
       [code, body.customer_name, body.phone || null, status, body.pay_timing, body.discount, token]
     );
     const orderId = orderRes.rows[0].id;
 
-    const deliveries = [];
-    for (let idx = 0; idx < body.deliveries.length; idx++) {
-      const d = body.deliveries[idx];
-      const fee = d.method === 'antar_nabila' ? d.shipping_fee : 0;
+    const deliveryIds = [];
+    for (const d of body.deliveries) {
       const r = await client.query(
         `INSERT INTO deliveries (order_id, delivery_date, method, address, shipping_fee)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id, delivery_status, delivered_at`,
-        [orderId, d.delivery_date, d.method, d.method === 'antar_nabila' ? d.address : null, fee]
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [orderId, d.delivery_date, d.method, d.method === 'antar_nabila' ? d.address : null, d.method === 'antar_nabila' ? d.shipping_fee : 0]
       );
-      deliveries.push({
-        id: r.rows[0].id,
-        delivery_date: d.delivery_date,
-        method: d.method,
-        shipping_fee: fee,
-        delivery_status: r.rows[0].delivery_status,
-        delivered_at: r.rows[0].delivered_at,
-      });
+      deliveryIds.push(r.rows[0].id);
     }
 
-    const outItems = [];
     for (let i = 0; i < priced.length; i++) {
       const it = priced[i];
-      const note = body.items[i].note || null;
-      const deliveryId = deliveries[it.delivery_index].id;
       const itemRes = await client.query(
         `INSERT INTO order_items (order_id, delivery_id, menu_id, item_type, custom_name, qty, unit_price, note)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-        [orderId, deliveryId, it.menu_id, it.item_type, it.custom_name, it.qty, it.unit_price, note]
+        [orderId, deliveryIds[it.delivery_index], it.menu_id, it.item_type, it.custom_name, it.qty, it.unit_price, body.items[i].note || null]
       );
-      const itemId = itemRes.rows[0].id;
       for (const o of it.options) {
         await client.query(
           `INSERT INTO order_item_options (order_item_id, menu_option_id, extra_price) VALUES ($1, $2, $3)`,
-          [itemId, o.menu_option_id, o.extra_price]
+          [itemRes.rows[0].id, o.menu_option_id, o.extra_price]
         );
       }
-      outItems.push({
-        id: itemId,
-        delivery_id: deliveryId,
-        item_type: it.item_type,
-        menu_id: it.menu_id,
-        name: it.item_type === 'menu' ? menus.get(it.menu_id).name : it.custom_name,
-        unit_price: it.unit_price,
-        qty: it.qty,
-        line_total: it.line_total,
-        options: it.options.map((o) => ({
-          menu_option_id: o.menu_option_id,
-          name: options.get(o.menu_option_id).name,
-          option_group: options.get(o.menu_option_id).option_group,
-          extra_price: o.extra_price,
-        })),
-        note,
-      });
     }
 
     await client.query(
@@ -144,19 +115,7 @@ async function createMaclabOrder(body, adminId) {
     );
 
     await client.query('COMMIT');
-    return {
-      id: orderId,
-      order_code: code,
-      public_token: token,
-      source: 'admin_form',
-      status,
-      pay_status: 'belum_bayar',
-      pay_timing: body.pay_timing,
-      deliveries,
-      items: outItems,
-      totals,
-      created_at: orderRes.rows[0].created_at,
-    };
+    return orderId;
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
     throw err;
@@ -169,17 +128,18 @@ async function createMaclabOrder(body, adminId) {
 // supaya request lain ke /admin/orders tidak dicek dua kali (setiap cek = satu query ke admin_users).
 router.post('/', requireAdmin, validate(maclabOrderCreate), async (req, res, next) => {
   try {
-    let result;
+    let id;
     for (let attempt = 1; ; attempt++) {
       try {
-        result = await createMaclabOrder(req.body, req.admin.id);
+        id = await createMaclabOrder(req.body, req.admin.id);
         break;
       } catch (err) {
         if (err.code === '23505' && attempt < 3) continue; // kode atau token bentrok: ulang
         throw err;
       }
     }
-    res.status(201).json(result);
+    // Balasan sama dengan GET /admin/orders/:id (openapi: OrderDetail).
+    res.status(201).json(await loadDetail(pool, id));
   } catch (err) {
     next(err);
   }
