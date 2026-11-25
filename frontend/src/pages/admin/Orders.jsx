@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import OrderTable, { STATUS } from '../../components/admin/OrderTable'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
@@ -15,7 +15,9 @@ const TABS = [['semua', 'Semua'], ...Object.entries(STATUS).map(([k, [label]]) =
 export default function Orders() {
   const [orders, setOrders] = useState(null)
   const [error, setError] = useState('')
-  const [q, setQ] = useState('')
+  const [params] = useSearchParams()
+  const [q, setQ] = useState(params.get('q') || '') // dari kotak cari di top bar
+  useEffect(() => { if (params.has('q')) setQ(params.get('q')) }, [params])
   const [tab, setTab] = useState('semua')
   const [page, setPage] = useState(1)
   const [modal, setModal] = useState(null) // { jenis, order }
@@ -61,7 +63,8 @@ export default function Orders() {
         <Link to="/dapur/maclab" className="rounded-[10px] bg-ungu px-5 py-3 text-[15px] font-bold text-white">+ Buat Pesanan Besar</Link>
       </div>
 
-      <div className="mt-5">
+      {/* Desktop memakai kotak cari di top bar (Figma); di HP kotak cari ada di halaman */}
+      <div className="mt-5 lg:hidden">
         <label htmlFor="cari" className="sr-only">Cari pesanan</label>
         <div className="relative max-w-md">
           <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-abu" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>

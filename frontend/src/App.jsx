@@ -16,6 +16,8 @@ import OrderDetail from './pages/admin/OrderDetail.jsx'
 import Reviews from './pages/admin/Reviews.jsx'
 import Settings from './pages/admin/Settings.jsx'
 import Kitchen from './pages/admin/Kitchen.jsx'
+import Recap from './pages/admin/Recap.jsx'
+import Lainnya from './pages/admin/Lainnya.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 
 export default function App() {
@@ -33,6 +35,8 @@ export default function App() {
         <Route index element={<Login />} />
         <Route element={<AdminLayout />}>
           <Route path="beranda" element={<Dashboard />} />
+          <Route path="rekap" element={<Recap />} />
+          <Route path="lainnya" element={<Lainnya />} />
           <Route path="pesanan" element={<Orders />} />
           <Route path="pesanan/:id" element={<OrderDetail />} />
           <Route path="ulasan" element={<Reviews />} />

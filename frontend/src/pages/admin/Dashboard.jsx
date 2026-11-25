@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, useNavigate, useOutletContext } from 'react-router-dom'
+import Ikon from '../../components/admin/Ikon'
+import { NotifLonceng } from '../../components/admin/AdminLayout'
 import { api } from '../../api/client'
 import { todayJakarta, addDays, labelTanggal } from '../../utils/date'
 import { localPhoto } from '../../utils/menuPhoto'
@@ -20,6 +22,7 @@ const urutMenu = (names) => [...Object.keys(WARNA).filter((m) => names.includes(
 const jam = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })
 const hariPanjang = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'UTC' })
 const kartu = 'rounded-[20px] bg-white p-5 lg:p-6'
+const AVATAR = ['bg-ungu text-white', 'bg-kuning text-ungu-gelap', 'bg-ungu-gelap text-white', 'bg-[#e07a2f] text-white', 'bg-[#e8dcc6] text-ungu-gelap'] // seperti Figma
 const Svg = ({ d, className = 'size-4' }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
 )
@@ -177,6 +180,9 @@ export default function Dashboard() {
 
   const close = useCallback(() => setModal(null), [])
   const done = useCallback((_, m) => { setModal(null); setNotice(m); load() }, [load])
+  const navigate = useNavigate()
+  // Setelah konfirmasi, buka detail pesanan: tombol Kirim Tagihan ada di sana
+  const konfirmasiLalu = useCallback((o) => { setModal(null); navigate(`/dapur/pesanan/${o.id}`) }, [navigate])
 
   if (error) return <p role="alert" className="mx-auto max-w-[1180px] rounded-[10px] bg-[#fde8e8] px-4 py-3 text-sm font-semibold text-[#b91c1c]">Dashboard belum bisa dimuat: {error} <button type="button" onClick={load} className="ml-2 underline">Coba lagi</button></p>
   if (!d) return <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat dashboard…</p>
@@ -205,15 +211,23 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-[1180px] pb-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4 lg:items-end">
+        <div className="flex-1">
           <h1 className="text-[26px] font-extrabold lg:text-[30px]"><span className="lg:hidden">Halo, {admin?.username}</span><span className="hidden lg:inline">Dashboard Operasional</span></h1>
           <p className="text-sm font-medium text-abu">
             <span className="lg:hidden">{hariPanjang(today)}, {labelTanggal(today).panjang.split(', ')[1]} · {porsiHariIni} porsi hari ini</span>
             <span className="hidden lg:inline">Kelola kapasitas masak, konfirmasi ongkir, dan tagihan pesanan MYM</span>
           </p>
         </div>
-        <Link to="/dapur/maclab" className="hidden rounded-[10px] bg-ungu px-5 py-3 text-[15px] font-bold text-white lg:block">+ Buat Pesanan Besar</Link>
+        <div className="lg:hidden"><NotifLonceng r={admin?.ringkasan} /></div>
+        <div className="hidden items-center gap-3 lg:flex">
+          <Link to="/dapur/maclab" className="rounded-[10px] bg-ungu px-5 py-3 text-[15px] font-bold text-white">+ Buat Pesanan Besar</Link>
+          {/* shortcut: rekap Excel menunggu tim DS; tempatnya disiapkan */}
+          <button type="button" disabled title="Segera: menunggu rekap dari tim Data Science"
+            className="flex items-center gap-2 rounded-[10px] px-4 py-3 text-[15px] font-bold disabled:cursor-not-allowed disabled:opacity-50">
+            <Ikon d="unduh" />Unduh Rekap Excel
+          </button>
+        </div>
       </div>
 
       {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
@@ -245,7 +259,7 @@ export default function Dashboard() {
               <>
                 <Link to={`/dapur/pesanan/${antre[0].id}`} className="mt-1 block font-bold hover:underline">{antre[0].order_code}{antre[0].customer_name && ` · ${antre[0].customer_name}`}</Link>
                 <p className="text-[13px] font-medium text-abu-label">{menuLabel(antre[0])}{antre[0].delivery_methods.includes('antar_nabila') && ' · ongkir belum diisi'}</p>
-                <button type="button" onClick={() => setModal({ jenis: 'konfirmasi', id: antre[0].id })} className="mt-3 h-11 w-full rounded-[10px] bg-kuning text-sm font-bold text-ungu-gelap">Konfirmasi pesanan</button>
+                <button type="button" onClick={() => setModal({ jenis: 'konfirmasi', id: antre[0].id })} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-kuning text-sm font-bold text-ungu-gelap"><Ikon d="chat" className="size-4" />Konfirmasi & kirim tagihan</button>
               </>
             ) : <p className="mt-1 text-sm font-medium">Semua pesanan sudah dikonfirmasi.</p>}
           </div>
@@ -283,7 +297,7 @@ export default function Dashboard() {
               return (
                 <li key={o.id}>
                   <Link to={`/dapur/pesanan/${o.id}`} className="flex items-center gap-3 hover:opacity-80">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-ungu text-sm font-bold text-white">{inisial(o.customer_name)}</span>
+                    <span className={`flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${AVATAR[o.id % AVATAR.length]}`}>{inisial(o.customer_name)}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-bold">{o.customer_name || 'Dianonimkan'}</span>
                       <span className="block truncate text-xs font-medium text-abu">{o.payment_overdue ? 'Lewat batas bayar' : `${o.items_summary.reduce((a, i) => a + i.qty, 0)} porsi · ${labelTanggal(o.delivery_dates[0]).panjang}`}</span>
@@ -300,7 +314,7 @@ export default function Dashboard() {
         <section className={kartu} aria-labelledby="judul-masak">
           <div className="flex items-center justify-between">
             <h2 id="judul-masak" className="text-lg font-bold">Masak hari ini</h2>
-            <Link to="/dapur/masak" className="text-sm font-bold text-ungu">Daftar masak</Link>
+            <Link to="/dapur/masak?cetak=1" className="flex items-center gap-1.5 text-sm font-bold text-ungu"><Ikon d="M6 9V3h12v6M6 18H4a1 1 0 01-1-1v-6a2 2 0 012-2h14a2 2 0 012 2v6a1 1 0 01-1 1h-2M6 14h12v7H6z" className="size-4" />Cetak</Link>
           </div>
           <p className="text-[13px] font-medium text-abu">{labelTanggal(today).panjang} · {kitchen.portions_total} porsi siap dimasak</p>
           <ul className="mt-4 flex flex-col gap-3">
@@ -322,7 +336,7 @@ export default function Dashboard() {
 
       {modal?.jenis === 'bayar' && <PaymentForm orderId={modal.id} onClose={close} onDone={done} />}
       {modal?.jenis === 'jadwal' && <RescheduleDialog orderId={modal.id} onClose={close} onDone={done} />}
-      {modal?.jenis === 'konfirmasi' && <ConfirmDialog orderId={modal.id} onClose={close} onDone={done} />}
+      {modal?.jenis === 'konfirmasi' && <ConfirmDialog orderId={modal.id} onClose={close} onDone={konfirmasiLalu} />}
     </div>
   )
 }

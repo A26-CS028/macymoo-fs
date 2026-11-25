@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import { todayJakarta, addDays, labelTanggal } from '../../utils/date'
 import { localPhoto } from '../../utils/menuPhoto'
@@ -63,6 +63,10 @@ export default function Kitchen() {
     api('/closed-dates').then((r) => setClosed(r.closed_dates.map((c) => c.closed_date))).catch(() => {})
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const [params, setParams] = useSearchParams()
+  useEffect(() => {
+    if (params.get('cetak') && data[date]) { setParams({}, { replace: true }); setTimeout(() => window.print(), 300) }
+  }, [params, data, date, setParams])
 
   const k = data[date]
   const siap = k?.in_progress || []

@@ -163,8 +163,8 @@ export default function Settings() {
     <form onSubmit={simpan} className="mx-auto max-w-[1180px] pb-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-extrabold lg:text-[30px]">Bank, QRIS & Tutup Tanggal</h1>
-          <p className="text-sm font-medium text-abu">Atur cara bayar dan tanggal Nabila tidak menerima pesanan</p>
+          <h1 className="text-[26px] font-extrabold max-lg:hidden lg:text-[30px]">Bank, QRIS & Tutup Tanggal</h1>
+          <p className="text-sm font-medium text-abu max-lg:hidden">Atur cara bayar dan tanggal Nabila tidak menerima pesanan</p>
         </div>
         <button type="submit" disabled={saving || !berubah} className={`${btnUtama} hidden lg:flex`}>{saving ? 'Menyimpan…' : 'Simpan Pengaturan'}</button>
       </div>
