@@ -3,9 +3,10 @@ import logo from '../assets/landing/logo.webp'
 import iconBot from '../assets/landing/icon-bot.svg'
 
 const LINKS = [
-  { href: '#menu', label: 'Menu' },
-  { href: '#pre-order', label: 'Pre-order' },
-  { href: '#ulasan', label: 'Ulasan' },
+  // /#…: tetap jalan dari halaman lain (status, 404); di beranda hanya menggulir
+  { href: '/#menu', label: 'Menu' },
+  { href: '/#pre-order', label: 'Pre-order' },
+  { href: '/#ulasan', label: 'Ulasan' },
   { href: '/aturan', label: 'Aturan & Privasi' },
 ]
 
@@ -44,7 +45,8 @@ function MooBotButton({ onClick }) {
   )
 }
 
-export default function Navbar({ onMooBot }) {
+// cta: ganti tombol kanan (mis. "Pesan sekarang" di halaman status); bawaan tombol MooBot
+export default function Navbar({ onMooBot, cta }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -54,7 +56,7 @@ export default function Navbar({ onMooBot }) {
         <nav aria-label="Navigasi utama" className="hidden items-center gap-9 text-[15px] font-bold text-ungu-gelap lg:flex">
           {LINKS.map((l) => <a key={l.href} href={l.href}>{l.label}</a>)}
         </nav>
-        <div className="hidden lg:block"><MooBotButton onClick={onMooBot} /></div>
+        <div className="hidden lg:block">{cta || <MooBotButton onClick={onMooBot} />}</div>
         <button type="button" className="text-ungu-gelap lg:hidden" aria-label="Buka menu"
           aria-expanded={open} onClick={() => setOpen(true)}>
           <IconMenu />
@@ -73,10 +75,10 @@ export default function Navbar({ onMooBot }) {
               </button>
             </div>
             <ul className="mt-2">
-              {['Ulasan', 'Aturan & Privasi', 'Tanya MooBot'].map((label) => (
+              {['Ulasan', 'Aturan & Privasi', 'Tanya MooBot'].filter((l) => l !== 'Tanya MooBot' || onMooBot).map((label) => (
                 <li key={label}>
                   <a
-                    href={label === 'Ulasan' ? '#ulasan' : label === 'Aturan & Privasi' ? '/aturan' : '#'}
+                    href={label === 'Ulasan' ? '/#ulasan' : label === 'Aturan & Privasi' ? '/aturan' : '#'}
                     onClick={(e) => {
                       setOpen(false)
                       if (label === 'Tanya MooBot') { e.preventDefault(); onMooBot?.() }

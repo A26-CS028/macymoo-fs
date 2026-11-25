@@ -9,6 +9,7 @@ const NAV = [
   { to: '/dapur/pesanan', label: 'Pesanan' },
   { to: '/dapur/menu', label: 'Menu' },
   { to: '/dapur/maclab', label: 'MacLab' },
+  { to: '/dapur/ulasan', label: 'Ulasan' },
 ]
 
 const navCls = ({ isActive }) =>

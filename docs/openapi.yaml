@@ -2352,6 +2352,19 @@ components:
           description: Info bank dan QRIS; tidak dikirim selama `menunggu_konfirmasi` atau `dibatalkan`.
           allOf:
             - $ref: '#/components/schemas/Settings'
+        review:
+          type: object
+          nullable: true
+          description: |
+            Link ulasan (`/ulasan/{public_token}`, kirim ke `POST /reviews/{token}`). Hanya terisi untuk pesanan
+            Selesai yang belum diulas dan tokennya belum lewat 7 hari; selain itu null. Token dibuat saat Selesai.
+          required: [token, expires_at]
+          properties:
+            token:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
         wa_link:
           type: string
           format: uri
