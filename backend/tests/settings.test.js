@@ -18,7 +18,7 @@ const bad = (body, field) => {
 const lengkap = {
   bank_name: 'BCA',
   bank_account_number: '1234567890',
-  bank_account_holder: 'Nabila Dewi Sulistyani',
+  bank_account_holder: 'Pemilik Uji',
   qris_image_url: 'https://abc.public.blob.vercel-storage.com/qris-xyz.png',
   wa_number: '6281200000000',
 };

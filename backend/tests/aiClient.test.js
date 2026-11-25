@@ -86,5 +86,5 @@ test('item yang tidak dikirim atau tanpa label diabaikan; database gagal tidak t
 
   reply = () => ok({ model_version: 'linsvm-v2', items: [{ order_item_id: 1, labels: ['kemasan'] }] });
   pool.query = async () => { throw new Error('koneksi putus'); };
-  await labelItems([{ order_item_id: 1, note: 'bungkus rapat' }]);
+  await assert.doesNotReject(labelItems([{ order_item_id: 1, note: 'bungkus rapat' }]));
 });
