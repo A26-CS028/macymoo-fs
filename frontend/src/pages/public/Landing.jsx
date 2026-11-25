@@ -180,7 +180,7 @@ export default function Landing() {
       return next
     })
 
-  const porsi = Object.values(cart).reduce((a, b) => a + b, 0)
+  const porsi = menus.reduce((a, m) => a + (cart[m.id] || 0), 0) // hanya menu yang masih tersedia
   // Hanya untuk tampilan; total resmi tetap dihitung server
   const subtotal = menus.reduce((sum, m) => sum + (cart[m.id] || 0) * m.price, 0)
 

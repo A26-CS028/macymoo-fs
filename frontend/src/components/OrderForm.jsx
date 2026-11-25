@@ -48,6 +48,16 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
 
+  // Menu yang habis setelah masuk keranjang dikeluarkan supaya jumlah porsi dan total tidak menyesatkan
+  useEffect(() => {
+    if (!menus.length) return
+    const ada = new Set(menus.map((m) => String(m.id)))
+    const habis = Object.keys(cart).filter((id) => !ada.has(id))
+    if (!habis.length) return
+    setCart((c) => Object.fromEntries(Object.entries(c).filter(([id]) => ada.has(id))))
+    setMessage('Sebagian menu di keranjang sedang habis dan sudah dikeluarkan dari pesanan.')
+  }, [menus, cart, setCart])
+
   useEffect(() => {
     api('/closed-dates').then((r) => setClosed(r.closed_dates.map((c) => c.closed_date))).catch(() => {})
   }, [])

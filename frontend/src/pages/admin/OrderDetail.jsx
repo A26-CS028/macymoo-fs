@@ -72,7 +72,8 @@ export default function OrderDetail() {
   const t = o.totals
   const aktif = ['menunggu_konfirmasi', 'menunggu_pembayaran', 'diproses'].includes(o.status)
   const sudahKonfirmasi = o.status !== 'menunggu_konfirmasi'
-  const bisaBayar = (aktif && sudahKonfirmasi && t.balance_due > 0) || (o.status === 'dibatalkan' && t.paid_net > 0)
+  const tertagih = ['menunggu_pembayaran', 'diproses', 'selesai'].includes(o.status) && t.balance_due > 0 // selesai: bayar setelah kirim
+  const bisaBayar = tertagih || (o.status === 'dibatalkan' && t.paid_net > 0)
   const belumTerkirim = o.deliveries.filter((d) => d.delivery_status !== 'terkirim').length
   const multi = o.deliveries.length > 1
 
@@ -96,14 +97,15 @@ export default function OrderDetail() {
         {/* Aksi utama sesuai status (KF 5) */}
         <div className="flex flex-wrap gap-2">
           {o.status === 'menunggu_konfirmasi' && <button type="button" onClick={() => setModal('konfirmasi')} className={`${btn} bg-ungu text-white`}>Konfirmasi</button>}
-          {aktif && sudahKonfirmasi && t.balance_due > 0 && (
+          {tertagih && (
             <button type="button" disabled={busy === 'tagih'} onClick={() => aksi('tagih', `/admin/orders/${o.id}/send-bill`, { method: 'POST' }, (r) => `Tagihan ${rupiah(t.balance_due)} siap dikirim${r.pay_deadline_at ? `; batas bayar ${jam.format(new Date(r.pay_deadline_at))}` : ''}`)}
               className={`${btn} bg-ungu-gelap text-white`}>{busy === 'tagih' ? 'Mengirim…' : o.invoice_sent_at ? 'Kirim ulang tagihan' : 'Kirim Tagihan'}</button>
           )}
-          {bisaBayar && <button type="button" onClick={() => setModal('bayar')} className={`${btn} bg-[#2563eb] text-white`}>Catat Pembayaran</button>}
+          {bisaBayar && <button type="button" onClick={() => setModal('bayar')} className={`${btn} bg-[#2563eb] text-white`}>{o.status === 'dibatalkan' ? 'Catat Refund' : 'Catat Pembayaran'}</button>}
           {o.status === 'diproses' && (
             <button type="button" disabled={!!belumTerkirim || busy === 'selesai'} title={belumTerkirim ? `${belumTerkirim} pengiriman belum terkirim` : undefined}
-              onClick={() => aksi('selesai', `/admin/orders/${o.id}/complete`, { method: 'POST' }, `${o.order_code} selesai`)}
+              onClick={() => (t.balance_due === 0 || window.confirm(`Masih ada sisa tagihan ${rupiah(t.balance_due)}. Tetap tandai selesai? Pembayaran masih bisa dicatat setelahnya.`))
+                && aksi('selesai', `/admin/orders/${o.id}/complete`, { method: 'POST' }, `${o.order_code} selesai`)}
               className={`${btn} bg-[#16a34a] text-white`}>Tandai Selesai</button>
           )}
           {sudahKonfirmasi && (

@@ -80,32 +80,32 @@ function Langkah({ o }) {
   }
   return (
     <>
-      <ol className="flex flex-col lg:flex-row lg:items-center">
+      <ol className="flex flex-col xl:flex-row xl:items-center">
         {URUTAN.map((k, i) => {
           const selesai = !batal && (i < idx || o.status === 'selesai')
           const kini = !batal && i === idx && o.status !== 'selesai'
           return (
-            <li key={k} className="flex gap-3 lg:flex-1 lg:items-center" aria-current={kini ? 'step' : undefined}>
-              <div className="flex flex-col items-center lg:flex-row lg:gap-3">
-                <span className={`flex size-9 shrink-0 items-center justify-center rounded-[10px] lg:rounded-full ${selesai ? 'bg-ungu text-white' : kini ? 'bg-kuning text-ungu-gelap' : 'bg-krem-field text-abu'}`}>
+            <li key={k} className="flex gap-3 xl:flex-1 xl:items-center" aria-current={kini ? 'step' : undefined}>
+              <div className="flex flex-col items-center xl:flex-row xl:gap-3">
+                <span className={`flex size-9 shrink-0 items-center justify-center rounded-[10px] xl:rounded-full ${selesai ? 'bg-ungu text-white' : kini ? 'bg-kuning text-ungu-gelap' : 'bg-krem-field text-abu'}`}>
                   <Svg d={selesai ? I.centang : I.jam} className="size-[18px]" />
                 </span>
-                {i < URUTAN.length - 1 && <span className={`my-1 h-7 w-0.5 lg:hidden ${selesai ? 'bg-ungu' : 'bg-krem-field'}`} />}
+                {i < URUTAN.length - 1 && <span className={`my-1 h-7 w-0.5 xl:hidden ${selesai ? 'bg-ungu' : 'bg-krem-field'}`} />}
               </div>
-              <div className="pb-2 lg:whitespace-nowrap lg:pb-0">
-                <p className={`text-[15px] font-bold lg:text-sm ${selesai || kini ? '' : 'text-abu'}`}>{BADGE[k][0]}</p>
-                <p className="text-[13px] font-medium text-abu lg:text-xs">{sub[k]}</p>
+              <div className="pb-2 xl:whitespace-nowrap xl:pb-0">
+                <p className={`text-[15px] font-bold xl:text-sm ${selesai || kini ? '' : 'text-abu'}`}>{BADGE[k][0]}</p>
+                <p className="text-[13px] font-medium text-abu xl:text-xs">{sub[k]}</p>
               </div>
-              {i < URUTAN.length - 1 && <span className={`mx-4 hidden h-0.5 min-w-6 flex-1 lg:block ${selesai ? 'bg-ungu' : 'bg-krem-field'}`} />}
+              {i < URUTAN.length - 1 && <span className={`mx-4 hidden h-0.5 min-w-6 flex-1 xl:block ${selesai ? 'bg-ungu' : 'bg-krem-field'}`} />}
             </li>
           )
         })}
       </ol>
-      <p className={`mt-2 flex items-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-[#dc2626] lg:ml-4 lg:mt-0 lg:shrink-0 lg:px-3 lg:py-2 ${batal ? 'bg-[#fde8e8]' : 'bg-krem-field'}`}>
+      <p className={`mt-2 flex items-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-[#dc2626] xl:ml-4 xl:mt-0 xl:shrink-0 xl:px-3 xl:py-2 ${batal ? 'bg-[#fde8e8]' : 'bg-krem-field'}`}>
         <Svg d={I.silang} className="size-4 shrink-0" />
         <span>
-          <span className="lg:block">{batal ? 'Pesanan dibatalkan' : 'Dibatalkan'}</span>{' '}
-          {!batal && <span className="lg:block lg:text-[11px] lg:font-medium lg:text-abu">{o.pay_timing === 'di_muka' ? 'otomatis jika lewat batas bayar' : 'hanya oleh Nabila'}</span>}
+          <span className="xl:block">{batal ? 'Pesanan dibatalkan' : 'Dibatalkan'}</span>{' '}
+          {!batal && <span className="xl:block xl:text-[11px] xl:font-medium xl:text-abu">{o.pay_timing === 'di_muka' ? 'oleh Nabila bila lewat batas bayar' : 'hanya oleh Nabila'}</span>}
         </span>
       </p>
     </>
@@ -134,7 +134,10 @@ export default function OrderStatus() {
         <div role="alert">
           <p className="text-lg font-bold">Status pesanan belum bisa dimuat.</p>
           <p className="text-sm text-abu">{error.message}</p>
-          <button type="button" onClick={load} className="mt-4 rounded-[10px] bg-ungu px-5 py-3 font-bold text-white">Coba lagi</button>
+          <div className="mt-4 flex justify-center gap-2">
+            <button type="button" onClick={load} className="rounded-[10px] bg-ungu px-5 py-3 font-bold text-white">Coba lagi</button>
+            <Link to="/" className="rounded-[10px] bg-krem-field px-5 py-3 font-bold">Ke beranda</Link>
+          </div>
         </div>
       </div>
     )
@@ -189,7 +192,7 @@ export default function OrderStatus() {
             <span className="block text-[15px] font-bold">
               {sisaWaktu === 'lewat' ? 'Batas bayar sudah lewat' : `Bayar sebelum ${jam.format(new Date(o.pay_deadline_at))} WIB · sisa ${sisaWaktu}`}
             </span>
-            <span className="block text-xs font-medium text-abu">{sisaWaktu === 'lewat' ? 'Hubungi Nabila lewat WhatsApp sebelum membayar' : 'Lewat batas 4 jam, pesanan otomatis dibatalkan'}</span>
+            <span className="block text-xs font-medium text-abu">{sisaWaktu === 'lewat' ? 'Hubungi Nabila lewat WhatsApp sebelum membayar' : 'Lewat batas 4 jam, Nabila bisa membatalkan pesanan'}</span>
           </span>
         </p>
       )}
@@ -221,7 +224,7 @@ export default function OrderStatus() {
           <Badge status={o.status} />
         </div>
 
-        <section className="rounded-[20px] bg-white p-5 lg:flex lg:items-center lg:px-6 lg:py-5" aria-label="Perjalanan pesanan">
+        <section className="rounded-[20px] bg-white p-5 lg:px-6 lg:py-5 xl:flex xl:items-center" aria-label="Perjalanan pesanan">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 lg:hidden">
             <h1 className="text-lg font-extrabold text-ungu">{o.order_code}</h1>
             <Badge status={o.status} />

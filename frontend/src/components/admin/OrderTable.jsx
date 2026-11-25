@@ -44,7 +44,8 @@ export function menuLabel(o) {
 const API = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/$/, '')
 function aksiUntuk(status, payStatus) {
   return {
-    bayar: ['menunggu_pembayaran', 'diproses'].includes(status) && payStatus !== 'lunas',
+    // dibatalkan yang sudah dibayar (dp/lunas) masih perlu dicatat refund-nya
+    bayar: (['menunggu_pembayaran', 'diproses', 'selesai'].includes(status) && payStatus !== 'lunas') || (status === 'dibatalkan' && ['dp', 'lunas'].includes(payStatus)),
     invoice: ['menunggu_pembayaran', 'diproses', 'selesai'].includes(status),
     konfirmasi: status === 'menunggu_konfirmasi',
     jadwal: ['menunggu_konfirmasi', 'menunggu_pembayaran', 'diproses'].includes(status),
@@ -111,7 +112,7 @@ export default function OrderTable({ orders, onAction }) {
                         className="flex size-8 items-center justify-center rounded-lg bg-ungu text-white hover:bg-ungu-tua"><Ikon d={I.centang} /></button>
                     )}
                     {a.bayar && (
-                      <button type="button" onClick={() => onAction('bayar', o)} title="Catat pembayaran" aria-label={`Catat pembayaran ${o.order_code}`}
+                      <button type="button" onClick={() => onAction('bayar', o)} title={o.status === 'dibatalkan' ? 'Catat refund' : 'Catat pembayaran'} aria-label={`${o.status === 'dibatalkan' ? 'Catat refund' : 'Catat pembayaran'} ${o.order_code}`}
                         className={`flex size-8 items-center justify-center rounded-lg ${o.status === 'menunggu_pembayaran' ? 'bg-[#2563eb] text-white hover:bg-[#1d4ed8]' : 'hover:bg-krem-field'}`}><Ikon d={I.dompet} /></button>
                     )}
                     {a.invoice && (
@@ -155,17 +156,17 @@ export default function OrderTable({ orders, onAction }) {
                   </p>
                 </div>
               </div>
-              {(a.konfirmasi || a.jadwal) && (
+              {(a.konfirmasi || a.jadwal || a.bayar) && (
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-3 text-sm font-bold">
                   {a.bayar && (
-                    <button type="button" onClick={() => onAction('bayar', o)} className={`col-span-2 flex h-10 items-center justify-center gap-2 rounded-[10px] ${o.status === 'menunggu_pembayaran' ? 'bg-[#2563eb] text-white' : 'bg-krem-field'}`}><Ikon d={I.dompet} />Catat pembayaran</button>
+                    <button type="button" onClick={() => onAction('bayar', o)} className={`col-span-2 flex h-10 items-center justify-center gap-2 rounded-[10px] ${o.status === 'menunggu_pembayaran' ? 'bg-[#2563eb] text-white' : 'bg-krem-field'}`}><Ikon d={I.dompet} />{o.status === 'dibatalkan' ? 'Catat refund' : 'Catat pembayaran'}</button>
                   )}
-                  {a.konfirmasi
+                  {(a.konfirmasi || a.jadwal) && (a.konfirmasi
                     ? <button type="button" onClick={() => onAction('konfirmasi', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-ungu text-white"><Ikon d={I.centang} />Konfirmasi</button>
-                    : <button type="button" onClick={() => onAction('jadwal', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-krem-field"><Ikon d={I.kalender} />Jadwal ulang</button>}
-                  <button type="button" onClick={() => onAction('batal', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-krem-field text-[#dc2626]">
+                    : <button type="button" onClick={() => onAction('jadwal', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-krem-field"><Ikon d={I.kalender} />Jadwal ulang</button>)}
+                  {a.batal && <button type="button" onClick={() => onAction('batal', o)} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-krem-field text-[#dc2626]">
                     <Ikon d={I.silang} />{o.status === 'menunggu_konfirmasi' ? 'Tolak' : 'Batalkan'}
-                  </button>
+                  </button>}
                   {a.konfirmasi && (
                     <button type="button" onClick={() => onAction('jadwal', o)} className="col-span-2 flex h-10 items-center justify-center gap-2 rounded-[10px] bg-krem-field"><Ikon d={I.kalender} />Usulkan tanggal lain</button>
                   )}

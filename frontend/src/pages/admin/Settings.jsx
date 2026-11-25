@@ -139,7 +139,13 @@ export default function Settings() {
     setBusyDate(d); setError(null)
     try {
       if (tutup) await api(`/admin/closed-dates/${tutup.id}`, { method: 'DELETE' })
-      else await api('/admin/closed-dates', { method: 'POST', body: JSON.stringify({ closed_date: d }) })
+      else {
+        // Menutup tanggal tidak memindahkan pesanan yang sudah ada di tanggal itu
+        const { orders } = await api(`/admin/orders?date=${d}`)
+        const aktif = orders.filter((o) => !['selesai', 'dibatalkan'].includes(o.status))
+        if (aktif.length && !window.confirm(`Sudah ada ${aktif.length} pesanan aktif untuk ${labelTanggal(d).panjang} (${aktif.map((o) => o.order_code).join(', ')}). Menutup tanggal tidak membatalkan atau memindahkan pesanan itu; jadwalkan ulang dari Pesanan Masuk bila perlu. Tetap tutup?`)) return
+        await api('/admin/closed-dates', { method: 'POST', body: JSON.stringify({ closed_date: d }) })
+      }
       setNotice(`${labelTanggal(d).panjang} ${tutup ? 'dibuka lagi' : 'ditutup; tidak bisa dipilih di Form PO'}`)
       await loadClosed()
     } catch (err) {
