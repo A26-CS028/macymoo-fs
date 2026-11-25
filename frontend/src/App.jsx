@@ -4,11 +4,13 @@ import Order from './pages/public/Order.jsx'
 import OrderSummary from './pages/public/OrderSummary.jsx'
 import OrderStatus from './pages/public/OrderStatus.jsx'
 import NotFound from './pages/public/NotFound.jsx'
+import Review from './pages/public/Review.jsx'
 import Login from './pages/admin/Login.jsx'
 import MacLab from './pages/admin/MacLab.jsx'
 import Menus from './pages/admin/Menus.jsx'
 import Orders from './pages/admin/Orders.jsx'
 import OrderDetail from './pages/admin/OrderDetail.jsx'
+import Reviews from './pages/admin/Reviews.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 
 export default function App() {
@@ -18,6 +20,7 @@ export default function App() {
       <Route path="/pesan" element={<Order />} />
       <Route path="/pesanan/terkirim" element={<OrderSummary />} />
       <Route path="/s/:token" element={<OrderStatus />} />
+      <Route path="/ulasan/:token" element={<Review />} />
       {/* Rute admin tersembunyi (KF 9.2): /dapur = login, halaman lain wajib sesi */}
       <Route path="/dapur">
         <Route index element={<Login />} />
@@ -25,6 +28,7 @@ export default function App() {
           <Route path="beranda" element={<p>Dashboard Operasional (segera)</p>} />
           <Route path="pesanan" element={<Orders />} />
           <Route path="pesanan/:id" element={<OrderDetail />} />
+          <Route path="ulasan" element={<Reviews />} />
           <Route path="maclab" element={<MacLab />} />
           <Route path="menu" element={<Menus />} />
         </Route>

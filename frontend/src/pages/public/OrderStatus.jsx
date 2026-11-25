@@ -229,6 +229,12 @@ export default function OrderStatus() {
           <Langkah o={o} />
         </section>
 
+        {o.review && (
+          <Link to={`/ulasan/${o.public_token}`} className="flex items-center justify-between gap-3 rounded-[14px] bg-kuning px-4 py-3.5 text-[15px] font-bold">
+            Pesanan selesai? Tulis ulasan
+            <span aria-hidden="true">→</span>
+          </Link>
+        )}
         {pesan && <p role="status" className="flex items-start gap-2.5 rounded-[14px] bg-ungu-gelap px-4 py-3.5 text-sm font-semibold text-white"><Svg d={I.info} className="mt-px size-5 shrink-0 text-kuning" />{pesan}</p>}
 
         {tagih ? (

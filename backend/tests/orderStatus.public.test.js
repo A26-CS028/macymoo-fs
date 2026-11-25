@@ -32,6 +32,17 @@ test('payment_info hanya setelah dikonfirmasi dan tidak dibatalkan', () => {
   assert.equal(toPublic(detail('menunggu_pembayaran'), settings).payment_info.bank_name, 'BCA');
 });
 
+test('link ulasan hanya untuk pesanan Selesai yang belum diulas dan belum kedaluwarsa', () => {
+  const besok = new Date(Date.now() + 864e5).toISOString();
+  const kemarin = new Date(Date.now() - 864e5).toISOString();
+  const r = { token: 'r'.repeat(32), token_expires_at: besok, rating: null };
+  assert.equal(toPublic(detail('selesai'), settings, r).review.token, r.token);
+  assert.equal(toPublic(detail('diproses'), settings, r).review, null);
+  assert.equal(toPublic(detail('selesai'), settings, { ...r, rating: 5 }).review, null);
+  assert.equal(toPublic(detail('selesai'), settings, { ...r, token_expires_at: kemarin }).review, null);
+  assert.equal(toPublic(detail('selesai'), settings).review, null);
+});
+
 test('wa_link null bila nomor Nabila belum diisi', () => {
   assert.equal(toPublic(detail('diproses'), { ...settings, wa_number: null }).wa_link, null);
 });

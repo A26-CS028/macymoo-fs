@@ -11,7 +11,8 @@ const router = express.Router();
 const notFound = () => httpError(404, 'NOT_FOUND', 'Pesanan tidak ditemukan');
 
 // Detail admin -> tampilan publik: tanpa nama, nomor HP, alamat, label MooLabel, pembayaran, dan riwayat admin.
-function toPublic(d, settings) {
+// review: baris tabel reviews pesanan ini (atau undefined).
+function toPublic(d, settings, review) {
   const tampilBayar = !['menunggu_konfirmasi', 'dibatalkan'].includes(d.status);
   const { wa_number, ...bank } = settings;
   return {
@@ -27,6 +28,9 @@ function toPublic(d, settings) {
     totals: d.totals,
     ...(tampilBayar && { payment_info: { ...bank, wa_number } }),
     wa_link: waLink(wa_number, `Halo Kak Nabila, saya mau tanya pesanan dengan kode ${d.order_code}`),
+    // Link ulasan hanya untuk pesanan Selesai yang belum diulas dan tokennya masih berlaku
+    review: d.status === 'selesai' && review && review.rating === null && new Date(review.token_expires_at) > new Date()
+      ? { token: review.token, expires_at: review.token_expires_at } : null,
     created_at: d.created_at,
   };
 }
@@ -39,7 +43,8 @@ router.get('/orders/status/:token', rateLimit({ name: 'order_status', max: 60, w
     if (!rows[0]) throw notFound();
     const detail = await loadDetail(pool, rows[0].id);
     const settings = await pool.query('SELECT key, value FROM settings WHERE key = ANY($1::text[])', [KEYS]);
-    res.set('Cache-Control', 'no-store').json(toPublic(detail, rowsToSettings(settings.rows)));
+    const review = await pool.query('SELECT token, token_expires_at, rating FROM reviews WHERE order_id = $1', [rows[0].id]);
+    res.set('Cache-Control', 'no-store').json(toPublic(detail, rowsToSettings(settings.rows), review.rows[0]));
   } catch (err) {
     next(err);
   }

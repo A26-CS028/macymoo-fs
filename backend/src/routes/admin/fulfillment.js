@@ -11,6 +11,7 @@ const { waLink } = require('../../services/waLink');
 const { assertCanSendBill, assertCanDeliver, assertCanComplete } = require('../../services/fulfillmentRules');
 const { deliveryUpdate } = require('../../validators/delivery');
 const { withOrder, loadDetail } = require('./orders'); // transaksi + detail yang sama dengan dasbor
+const { publicToken } = require('../../services/token');
 
 const router = express.Router();
 const MAX_INT = 2147483647;
@@ -78,6 +79,11 @@ router.post('/orders/:id(\\d+)/complete', requireAdmin, async (req, res, next) =
       const { rows } = await db.query(`SELECT count(*)::int AS pending FROM deliveries WHERE order_id = $1 AND delivery_status <> 'terkirim'`, [o.id]);
       assertCanComplete(o.status, rows[0].pending);
       await db.query(`UPDATE orders SET status = 'selesai' WHERE id = $1`, [o.id]);
+      // Link ulasan (7 hari) tampil di halaman status pelanggan; satu pesanan satu ulasan
+      await db.query(
+        `INSERT INTO reviews (order_id, token, token_expires_at) VALUES ($1, $2, now() + interval '7 days') ON CONFLICT (order_id) DO NOTHING`,
+        [o.id, publicToken()]
+      );
       await db.query(
         `INSERT INTO order_events (order_id, admin_id, event_type, from_status, to_status) VALUES ($1, $2, 'completed', $3, 'selesai')`,
         [o.id, req.admin.id, o.status]
