@@ -83,7 +83,7 @@ const maclabOrderCreate = Joi.object({
   customer_name: Joi.string().trim().min(1).max(100).required().label('Nama'),
   phone: phone.allow(''),
   pay_timing: Joi.string().valid('di_muka', 'setelah_kirim').required().label('Waktu bayar'),
-  discount: Joi.number().integer().min(0).default(0).label('Diskon'),
+  discount: Joi.number().integer().min(0).max(10000000).default(0).label('Diskon'),
   deliveries: Joi.array().min(1).max(10).items(delivery).required().label('Pengiriman'),
   items: Joi.array().min(1).max(50).items(item).required().label('Item pesanan'),
 }).prefs({ errors: { wrap: { label: false } }, messages });
