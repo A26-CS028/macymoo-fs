@@ -10,6 +10,7 @@ const NAV = [
   { to: '/dapur/menu', label: 'Menu' },
   { to: '/dapur/maclab', label: 'MacLab' },
   { to: '/dapur/ulasan', label: 'Ulasan' },
+  { to: '/dapur/pengaturan', label: 'Pengaturan' },
 ]
 
 const navCls = ({ isActive }) =>
