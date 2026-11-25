@@ -11,6 +11,7 @@ import Menus from './pages/admin/Menus.jsx'
 import Orders from './pages/admin/Orders.jsx'
 import OrderDetail from './pages/admin/OrderDetail.jsx'
 import Reviews from './pages/admin/Reviews.jsx'
+import Settings from './pages/admin/Settings.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="ulasan" element={<Reviews />} />
           <Route path="maclab" element={<MacLab />} />
           <Route path="menu" element={<Menus />} />
+          <Route path="pengaturan" element={<Settings />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />
