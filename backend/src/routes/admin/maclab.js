@@ -1,5 +1,4 @@
 // MacLab: Nabila mengisi pesanan kolaborasi / mendadak langsung di dasbor.
-// File terpisah dari routes/admin/orders.js (milik Darnell) supaya tidak bentrok saat merge.
 // Dipasang di /admin/orders (lihat routes/index.js), jadi endpoint-nya POST /admin/orders.
 const express = require('express');
 const pool = require('../../db/pool');
@@ -35,7 +34,7 @@ async function createMaclabOrder(body, adminId) {
     const menus = new Map(menuRes.rows.map((m) => [m.id, m]));
     const options = new Map(optRes.rows.map((o) => [o.id, o]));
 
-    // hitung harga (lempar PricingError bila menu/opsi/delivery_index tidak sah)
+    // hitung harga (error 400 bila menu/opsi/delivery_index tidak sah)
     const { items: priced } = calculateOrder(
       {
         items: body.items.map((i) => ({
