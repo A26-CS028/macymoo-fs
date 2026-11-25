@@ -3,10 +3,7 @@
 const Joi = require('joi');
 
 const messages = {
-  'string.base': '{#label} harus berupa teks',
-  'string.max': '{#label} maksimal {#limit} karakter',
-  'string.uri': '{#label} harus berupa tautan yang valid',
-  'string.uriCustomScheme': '{#label} harus berupa tautan https',
+  ...require('./messages'),
   'string.pattern.base': '{#label} hanya angka dan diawali 62, contoh 6281200000000',
 };
 

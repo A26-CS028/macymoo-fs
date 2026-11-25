@@ -3,9 +3,10 @@ const { httpError } = require('../middleware/errorHandler');
 
 const conflict = (code, message) => httpError(409, code, message);
 
-function assertCanSendBill(status) {
+function assertCanSendBill(status, balanceDue) {
   if (status === 'menunggu_konfirmasi') throw conflict('INVALID_STATUS_TRANSITION', 'Pesanan belum dikonfirmasi, tagihan belum bisa dikirim');
   if (status === 'dibatalkan') throw conflict('INVALID_STATUS_TRANSITION', 'Pesanan dibatalkan, tagihan tidak bisa dikirim');
+  if (balanceDue === 0) throw conflict('NOTHING_TO_BILL', 'Tagihan sudah lunas, tidak ada yang perlu dikirim');
 }
 
 function assertCanDeliver(status, deliveryStatus) {

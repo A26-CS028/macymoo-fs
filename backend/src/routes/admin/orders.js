@@ -1,4 +1,4 @@
-// Dasbor pesanan (Darnell): daftar, cari, filter, detail, konfirmasi (ongkir, waktu bayar, diskon),
+// Dasbor pesanan: daftar, cari, filter, detail, konfirmasi (ongkir, waktu bayar, diskon),
 // jadwal ulang, dan batal. Dipasang di /admin/orders bersama MacLab (routes/admin/maclab.js, POST /).
 const express = require('express');
 const pool = require('../../db/pool');
@@ -10,6 +10,7 @@ const { nextStatus, RESCHEDULABLE } = require('../../services/orderStatus');
 const { waLink } = require('../../services/waLink');
 const { payDeadline, isOverdue } = require('../../services/paymentDeadline');
 const { displayNo } = require('../../services/invoiceNumber');
+const { noteFlags } = require('../../services/noteRules');
 const { confirmOrder, rescheduleOrder, cancelOrder, listQuery } = require('../../validators/adminOrder');
 
 const router = express.Router();
@@ -138,6 +139,8 @@ async function loadDetail(db, id) {
        JOIN order_items oi ON oi.id = oio.order_item_id WHERE oi.order_id = $1 ORDER BY mo.id`,
     [id]
   );
+  const menuIds = [...new Set(items.map((it) => it.menu_id).filter((m) => m != null))];
+  const menuOptions = await db.query('SELECT menu_id, option_group, name, extra_price FROM menu_options WHERE menu_id = ANY($1::int[])', [menuIds]);
   const labels = await db.query(
     `SELECT l.order_item_id, l.label, l.model_version FROM order_item_labels l
        JOIN order_items oi ON oi.id = l.order_item_id WHERE oi.order_id = $1`,
@@ -160,12 +163,15 @@ async function loadDetail(db, id) {
     invoice_sent_at: o.invoice_sent_at,
     pay_deadline_at: deadline,
     deliveries: deliveries.map(({ order_id, ...d }) => d),
-    items: items.map(({ order_id, extra, ...it }) => ({
-      ...it,
-      options: opts.rows.filter((x) => x.order_item_id === it.id).map(({ order_item_id, ...x }) => x),
-      labels: labels.rows.filter((x) => x.order_item_id === it.id).map(({ order_item_id, ...x }) => x),
-      note_flags: [],
-    })),
+    items: items.map(({ order_id, extra, ...it }) => {
+      const options = opts.rows.filter((x) => x.order_item_id === it.id).map(({ order_item_id, ...x }) => x);
+      return {
+        ...it,
+        options,
+        labels: labels.rows.filter((x) => x.order_item_id === it.id).map(({ order_item_id, ...x }) => x),
+        note_flags: noteFlags({ note: it.note, chosen: options, menuOptions: menuOptions.rows.filter((m) => m.menu_id === it.menu_id) }),
+      };
+    }),
     payments: payments.rows,
     invoices: invoices.rows.map((i) => ({ ...i, display_no: displayNo(i.invoice_no, i.revision) })),
     events: events.rows,

@@ -8,18 +8,10 @@
 //   grand_total = subtotal + ongkir semua pengiriman - diskon
 //   pembayaran bersih = (dp + pelunasan) - refund
 
-class PricingError extends Error {
-  constructor(message, details) {
-    super(message)
-    this.name = 'PricingError'
-    this.status = 400
-    this.code = 'VALIDATION_ERROR'
-    this.details = details
-  }
-}
+const { httpError } = require('../middleware/errorHandler')
 
 const fail = (message, field) => {
-  throw new PricingError(message, field ? [{ field, message }] : undefined)
+  throw httpError(400, 'VALIDATION_ERROR', message, field ? [{ field, message }] : undefined)
 }
 const isRupiah = (n) => Number.isSafeInteger(n) && n >= 0
 
@@ -142,4 +134,4 @@ function calculateOrder({ items, deliveries, discount = 0, payments = [], status
   return { items: resolved, totals: computeTotals({ items: resolved, deliveries, discount, payments, status }) }
 }
 
-module.exports = { PricingError, resolveItems, computeTotals, calculateOrder }
+module.exports = { resolveItems, computeTotals, calculateOrder }

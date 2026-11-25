@@ -17,7 +17,6 @@ app.use(cookieParser());
 
 app.use('/api/v1', routes);
 
-// cek cepat: alamat root
 app.get('/', (req, res) => res.json({ name: 'macymoo-api', status: 'ok' }));
 
 // 404 dan error handler (harus paling bawah, setelah semua route)

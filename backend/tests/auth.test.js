@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('../src/db/pool');
 pool.query = async (sql, [id]) => ({ rows: id === 7 ? [{ id: 7, username: 'nabila' }] : [] });
 const { requireAdmin, COOKIE_NAME } = require('../src/middleware/auth');
-const { errorHandler } = require('../src/middleware/errorHandler');
+const { errorHandler, httpError } = require('../src/middleware/errorHandler');
 
 // Jalankan requireAdmin, lalu teruskan error (jika ada) ke errorHandler seperti Express.
 async function run(cookies) {
@@ -86,10 +86,9 @@ test('error pg (punya code, tanpa status) tetap disembunyikan', () => {
   assert.ok(logged);
 });
 
-test('PricingError dibalas 400 dengan details', () => {
+test('error validasi dengan details (mis. dari modul harga) dibalas 400 apa adanya', () => {
   const res = { status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; } };
-  const { PricingError } = require('../src/services/pricing');
-  errorHandler(new PricingError('Menu tidak ditemukan', [{ field: 'items.0.menu_id', message: 'Menu tidak ditemukan' }]), {}, res, () => {});
+  errorHandler(httpError(400, 'VALIDATION_ERROR', 'Menu tidak ditemukan', [{ field: 'items.0.menu_id', message: 'Menu tidak ditemukan' }]), {}, res, () => {});
   assert.strictEqual(res.statusCode, 400);
   assert.strictEqual(res.body.error.code, 'VALIDATION_ERROR');
   assert.strictEqual(res.body.error.details[0].field, 'items.0.menu_id');

@@ -1,0 +1,23 @@
+// Pesan Joi berbahasa Indonesia yang dipakai semua validator; tiap file boleh menimpa kunci tertentu.
+module.exports = {
+  'any.required': '{#label} wajib diisi',
+  'any.only': '{#label} tidak valid',
+  'string.base': '{#label} harus berupa teks',
+  'string.empty': '{#label} wajib diisi',
+  'string.min': '{#label} minimal {#limit} karakter',
+  'string.max': '{#label} maksimal {#limit} karakter',
+  'string.pattern.base': '{#label} tidak valid',
+  'string.uri': '{#label} harus berupa tautan yang valid',
+  'string.uriCustomScheme': '{#label} harus berupa tautan https',
+  'number.base': '{#label} harus berupa angka',
+  'number.integer': '{#label} harus bilangan bulat',
+  'number.positive': '{#label} tidak valid',
+  'number.min': '{#label} minimal {#limit}',
+  'number.max': '{#label} maksimal {#limit}',
+  'array.base': '{#label} tidak valid',
+  'array.min': '{#label} minimal {#limit} isi',
+  'array.max': '{#label} maksimal {#limit} isi',
+  'array.unique': '{#label} tidak boleh dobel',
+  'boolean.base': '{#label} tidak valid',
+  'object.min': 'Minimal satu field harus diisi',
+};

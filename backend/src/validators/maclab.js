@@ -2,23 +2,7 @@ const Joi = require('joi');
 const { isValidDate, todayJakarta } = require('../utils/date');
 const { phone } = require('./order');
 
-const messages = {
-  'any.required': '{#label} wajib diisi',
-  'string.base': '{#label} harus berupa teks',
-  'string.empty': '{#label} wajib diisi',
-  'string.min': '{#label} minimal {#limit} karakter',
-  'string.max': '{#label} maksimal {#limit} karakter',
-  'string.pattern.base': '{#label} tidak valid',
-  'number.base': '{#label} harus berupa angka',
-  'number.integer': '{#label} harus bilangan bulat',
-  'number.positive': '{#label} tidak valid',
-  'number.min': '{#label} minimal {#limit}',
-  'number.max': '{#label} maksimal {#limit}',
-  'array.base': '{#label} tidak valid',
-  'array.min': '{#label} minimal {#limit} isi',
-  'array.max': '{#label} maksimal {#limit} isi',
-  'any.only': '{#label} tidak valid',
-};
+const messages = require('./messages');
 
 const ITEM_TYPES = ['menu', 'item_bebas', 'bundling', 'bonus', 'kolaborasi'];
 
