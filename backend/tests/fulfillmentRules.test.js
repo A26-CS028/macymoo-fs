@@ -5,9 +5,13 @@ const { assertCanSendBill, assertCanDeliver, assertCanComplete } = require('../s
 const is = (code) => (e) => e.status === 409 && e.code === code;
 
 test('send-bill: ditolak untuk menunggu_konfirmasi dan dibatalkan, boleh untuk status lain', () => {
-  assert.throws(() => assertCanSendBill('menunggu_konfirmasi'), is('INVALID_STATUS_TRANSITION'));
-  assert.throws(() => assertCanSendBill('dibatalkan'), is('INVALID_STATUS_TRANSITION'));
-  for (const s of ['menunggu_pembayaran', 'diproses', 'selesai']) assert.doesNotThrow(() => assertCanSendBill(s));
+  assert.throws(() => assertCanSendBill('menunggu_konfirmasi', 50000), is('INVALID_STATUS_TRANSITION'));
+  assert.throws(() => assertCanSendBill('dibatalkan', 50000), is('INVALID_STATUS_TRANSITION'));
+  for (const s of ['menunggu_pembayaran', 'diproses', 'selesai']) assert.doesNotThrow(() => assertCanSendBill(s, 50000));
+});
+
+test('send-bill: tagihan yang sudah lunas tidak dikirim (pesan WA "sebesar Rp0")', () => {
+  for (const s of ['diproses', 'selesai']) assert.throws(() => assertCanSendBill(s, 0), is('NOTHING_TO_BILL'));
 });
 
 test('terkirim: hanya pesanan diproses; pengiriman yang sudah terkirim ditolak', () => {

@@ -82,9 +82,26 @@ tags:
 
 paths:
   # ===========================================================================
-  # PUBLIK (Darnell)
+  # PUBLIK
   # Semua operasi publik memakai `security: []`.
   # ===========================================================================
+  /health:
+    get:
+      tags: [Publik]
+      summary: Cek Express hidup (tanpa database)
+      security: []
+      responses:
+        '200':
+          description: Hidup
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+
   /menus:
     get:
       tags: [Publik]
@@ -665,7 +682,8 @@ paths:
       description: |
         Mencatat `invoice_sent_at`. Untuk bayar di muka, ini memulai batas bayar 4 jam
         (`pay_deadline_at`). Status pesanan tidak berubah.
-        Ditolak (409) bila pesanan belum dikonfirmasi atau sudah dibatalkan.
+        Ditolak (409) bila pesanan belum dikonfirmasi atau sudah dibatalkan (`INVALID_STATUS_TRANSITION`),
+        atau tidak ada sisa tagihan (`NOTHING_TO_BILL`).
         Pengiriman pesan dilakukan Nabila sendiri lewat `wa_link`.
       security:
         - cookieAuth: []
@@ -705,6 +723,8 @@ paths:
         Hanya pada `menunggu_konfirmasi`, `menunggu_pembayaran`, atau `diproses`; status tidak berubah.
         Tanggal baru dan alasan disimpan di riwayat (`order_events`). Pelanggan dikabari lewat `wa_link`.
         Jika pelanggan menolak, Nabila memakai `cancel`.
+        Kode 409: `INVALID_STATUS_TRANSITION`, `DELIVERY_ALREADY_DELIVERED` (pengiriman sudah terkirim),
+        `DATE_CLOSED` (tanggal baru ditutup Nabila).
       security:
         - cookieAuth: []
       parameters:
@@ -868,7 +888,8 @@ paths:
       tags: [Admin - Pesanan]
       summary: Tandai pengiriman Terkirim
       description: |
-        Mengisi `delivered_at`. Hanya bila pesanan `diproses`; selain itu 409.
+        Mengisi `delivered_at`. Hanya bila pesanan `diproses`; selain itu 409 (`INVALID_STATUS_TRANSITION`).
+        Pengiriman yang sudah terkirim: 409 `DELIVERY_ALREADY_DELIVERED`.
         Pesanan baru bisa Selesai setelah semua pengiriman terkirim.
       security:
         - cookieAuth: []
@@ -1162,7 +1183,8 @@ paths:
         Server memeriksa tipe (`image/jpeg`, `image/png`, `image/webp`) dan ukuran (maks 2 MB;
         batas body fungsi Vercel 4,5 MB). Nama file dibuat server (acak), bukan dari klien.
         Hasilnya `url` yang kemudian disimpan di menu atau `/admin/settings`.
-        Kode error: `FILE_TYPE_NOT_ALLOWED`, `FILE_TOO_LARGE` (keduanya 400).
+        Kode error: `FILE_TYPE_NOT_ALLOWED`, `FILE_TOO_LARGE` (keduanya 400),
+        `STORAGE_NOT_CONFIGURED` (500, `BLOB_READ_WRITE_TOKEN` belum diisi di server).
       security:
         - cookieAuth: []
       requestBody:
@@ -1739,7 +1761,10 @@ components:
     WaLink:
       type: string
       format: uri
-      description: Link `wa.me` dengan teks sudah terisi; Nabila yang menekan kirim.
+      nullable: true
+      description: |
+        Link `wa.me` dengan teks sudah terisi; Nabila yang menekan kirim.
+        Null bila nomor WhatsApp tujuan kosong (nomor HP pesanan MacLab boleh kosong).
       example: https://wa.me/6281234567890?text=Halo...
 
     # ---- Enum (samakan dengan CHECK di 001_init.sql) -----------------------

@@ -1,20 +1,9 @@
 const Joi = require('joi');
 
 const messages = {
-  'any.required': '{#label} wajib diisi',
-  'any.only': '{#label} tidak valid',
-  'string.base': '{#label} harus berupa teks',
-  'string.empty': '{#label} wajib diisi',
-  'string.min': '{#label} minimal {#limit} karakter',
-  'string.max': '{#label} maksimal {#limit} karakter',
-  'string.uri': '{#label} harus berupa tautan yang valid',
-  'string.uriCustomScheme': '{#label} harus berupa tautan https',
-  'number.base': '{#label} harus berupa angka',
+  ...require('./messages'),
   'number.integer': '{#label} harus Rupiah bulat, tanpa desimal',
-  'number.min': '{#label} minimal {#limit}',
-  'number.max': '{#label} maksimal {#limit}',
   'boolean.base': '{#label} harus true atau false',
-  'object.min': 'Minimal satu field harus diisi',
 };
 
 // Sama dengan OptionGroup di openapi.yaml (DB tanpa CHECK, jadi daftar dijaga di sini).

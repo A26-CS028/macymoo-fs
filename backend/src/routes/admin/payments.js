@@ -1,4 +1,4 @@
-// Catat pembayaran (Rama). Dipasang di /admin/orders SEBELUM router orders.js
+// Catat pembayaran. Dipasang di /admin/orders SEBELUM router orders.js
 // (requireAdmin dipasang per route supaya sesi admin hanya dicek sekali).
 const express = require('express');
 const validate = require('../../middleware/validate');

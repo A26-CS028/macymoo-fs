@@ -1,4 +1,4 @@
-// Kirim tagihan, tandai pengiriman terkirim, dan Selesai (Rama).
+// Kirim tagihan, tandai pengiriman terkirim, dan Selesai.
 // Dipasang di /admin; requireAdmin per route (sesi admin hanya dicek sekali).
 const express = require('express');
 const pool = require('../../db/pool');
@@ -23,14 +23,14 @@ router.post('/orders/:id(\\d+)/send-bill', requireAdmin, async (req, res, next) 
     const id = Number(req.params.id);
     if (id > MAX_INT) throw notFound('Pesanan');
     const { invoice_sent_at, pay_deadline_at, wa_link } = await withOrder(id, async (db, o) => {
-      assertCanSendBill(o.status);
+      const { totals } = await loadDetail(db, o.id);
+      assertCanSendBill(o.status, totals.balance_due);
       const { rows } = await db.query('UPDATE orders SET invoice_sent_at = now() WHERE id = $1 RETURNING invoice_sent_at', [o.id]);
       const sentAt = rows[0].invoice_sent_at;
       await db.query(
         `INSERT INTO order_events (order_id, admin_id, event_type, from_status, to_status) VALUES ($1, $2, 'bill_sent', $3, $3)`,
         [o.id, req.admin.id, o.status]
       );
-      const { totals } = await loadDetail(db, o.id);
       const base = (frontendOrigin || '').replace(/\/$/, ''); // domain macymoo-web
       const nama = o.customer_name ? ` ${o.customer_name}` : '';
       const link = base ? ` Detail dan cara bayar: ${base}/s/${o.public_token}` : '';

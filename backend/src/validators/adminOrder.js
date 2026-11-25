@@ -2,17 +2,7 @@ const Joi = require('joi');
 const { isValidDate, todayJakarta } = require('../utils/date');
 
 // Skema dasbor pesanan (openapi: ConfirmRequest, RescheduleRequest, CancelRequest, query GET /admin/orders).
-const messages = {
-  'any.required': '{#label} wajib diisi',
-  'string.empty': '{#label} wajib diisi',
-  'string.max': '{#label} maksimal {#limit} karakter',
-  'number.base': '{#label} harus berupa angka',
-  'number.integer': '{#label} harus bilangan bulat',
-  'number.min': '{#label} minimal {#limit}',
-  'number.max': '{#label} maksimal {#limit}',
-  'any.only': '{#label} tidak valid',
-  'array.unique': '{#label} tidak boleh dobel',
-};
+const messages = require('./messages');
 const prefs = { errors: { wrap: { label: false } }, messages };
 const rupiah = (label, max) => Joi.number().integer().min(0).max(max).label(label);
 const reason = Joi.string().trim().min(1).max(300).required().label('Alasan');

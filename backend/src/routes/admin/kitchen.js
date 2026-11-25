@@ -1,4 +1,4 @@
-// Daftar masak per tanggal (Rama, KF 9.2). Hanya baca: tidak mengubah data.
+// Daftar masak per tanggal (KF 9.2). Hanya baca: tidak mengubah data.
 const express = require('express');
 const pool = require('../../db/pool');
 const { aiServiceUrl } = require('../../config/env');

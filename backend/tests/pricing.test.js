@@ -1,6 +1,8 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { calculateOrder, resolveItems, computeTotals, PricingError } = require('../src/services/pricing')
+const { calculateOrder, resolveItems, computeTotals } = require('../src/services/pricing')
+
+const invalid = { status: 400, code: 'VALIDATION_ERROR' }
 
 // Katalog contoh (harga dari KF bagian 3). Harga opsi paha dan keju bersifat contoh uji.
 const catalog = {
@@ -85,7 +87,7 @@ test('Opsi: harga tambahan dikalikan qty dan disalin ke item', () => {
 test('Opsi milik menu lain ditolak', () => {
   assert.throws(
     () => resolveItems([{ item_type: 'menu', menu_id: 1, qty: 1, option_ids: [3] }], catalog),
-    PricingError
+    invalid
   )
 })
 
@@ -106,9 +108,9 @@ test('Item bebas, bundling, bonus Rp0, dan kolaborasi memakai unit_price dari Ma
 })
 
 test('Item selain menu wajib punya nama dan harga bulat', () => {
-  assert.throws(() => resolveItems([{ item_type: 'bonus', unit_price: 0, qty: 1 }], catalog), PricingError)
-  assert.throws(() => resolveItems([{ item_type: 'bonus', custom_name: 'x', unit_price: 1.5, qty: 1 }], catalog), PricingError)
-  assert.throws(() => resolveItems([{ item_type: 'bonus', custom_name: 'x', qty: 1 }], catalog), PricingError)
+  assert.throws(() => resolveItems([{ item_type: 'bonus', unit_price: 0, qty: 1 }], catalog), invalid)
+  assert.throws(() => resolveItems([{ item_type: 'bonus', custom_name: 'x', unit_price: 1.5, qty: 1 }], catalog), invalid)
+  assert.throws(() => resolveItems([{ item_type: 'bonus', custom_name: 'x', qty: 1 }], catalog), invalid)
 })
 
 test('Diskon dikurangkan dari subtotal dan ongkir', () => {
@@ -123,7 +125,7 @@ test('Diskon dikurangkan dari subtotal dan ongkir', () => {
 test('Diskon melebihi total ditolak', () => {
   assert.throws(
     () => calculateOrder({ items: [{ delivery_index: 0, item_type: 'menu', menu_id: 4, qty: 1 }], deliveries: [pickup], discount: 25001 }, catalog),
-    PricingError
+    invalid
   )
 })
 
@@ -140,15 +142,15 @@ test('Antar Nabila tanpa ongkir: subtotal saja dan shipping_pending true', () =>
 test('Ambil Sendiri dengan ongkir lebih dari 0 ditolak', () => {
   assert.throws(
     () => calculateOrder({ items: [{ delivery_index: 0, item_type: 'menu', menu_id: 1, qty: 1 }], deliveries: [{ method: 'ambil_sendiri', shipping_fee: 5000 }] }, catalog),
-    PricingError
+    invalid
   )
 })
 
 test('qty 0, menu tidak ada, dan delivery_index di luar daftar ditolak', () => {
-  assert.throws(() => resolveItems([{ item_type: 'menu', menu_id: 1, qty: 0 }], catalog), PricingError)
-  assert.throws(() => resolveItems([{ item_type: 'menu', menu_id: 99, qty: 1 }], catalog), PricingError)
+  assert.throws(() => resolveItems([{ item_type: 'menu', menu_id: 1, qty: 0 }], catalog), invalid)
+  assert.throws(() => resolveItems([{ item_type: 'menu', menu_id: 99, qty: 1 }], catalog), invalid)
   const items = resolveItems([{ delivery_index: 3, item_type: 'menu', menu_id: 1, qty: 1 }], catalog)
-  assert.throws(() => computeTotals({ items, deliveries: [pickup] }), PricingError)
+  assert.throws(() => computeTotals({ items, deliveries: [pickup] }), invalid)
 })
 
 test('Pembayaran: DP lalu Lunas, sisa tagihan benar', () => {
@@ -196,12 +198,12 @@ test('Semua angka hasil adalah bilangan bulat', () => {
   assert.equal(totals.grand_total, 3 * (27000 + 3000 + 5000) + 15000 - 1000) // 119000
 })
 
-test('kunci field PricingError memakai format titik yang sama dengan Joi', () => {
+test('kunci field error harga memakai format titik yang sama dengan Joi', () => {
   const fieldOf = (input) => {
     try {
       calculateOrder(input, catalog)
     } catch (err) {
-      assert.ok(err instanceof PricingError)
+      assert.equal(err.code, 'VALIDATION_ERROR')
       return err.details[0].field
     }
     assert.fail('seharusnya ditolak')
