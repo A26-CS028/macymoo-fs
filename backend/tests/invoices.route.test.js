@@ -37,7 +37,7 @@ before(async () => {
 after(() => server.close());
 
 const cookie = `${COOKIE_NAME}=${jwt.sign({ sub: '7', username: 'nabila' }, process.env.JWT_SECRET)}`;
-const get = (path, admin = true) => fetch(`${base}${path}`, { headers: admin ? { cookie } : {} });
+const get = (path, admin = true, extra = {}) => fetch(`${base}${path}`, { headers: { ...(admin ? { cookie } : {}), ...extra } });
 const post = (path, admin = true) => fetch(`${base}${path}`, { method: 'POST', headers: admin ? { cookie } : {} });
 
 test('tanpa sesi admin: kedua route 401', async () => {
@@ -58,6 +58,35 @@ test('pesanan menunggu_konfirmasi: 409 ORDER_NOT_CONFIRMED, tanpa menyentuh tabe
     assert.equal((await res.json()).error.code, 'ORDER_NOT_CONFIRMED');
   }
   assert.ok(!log.some((s) => s.includes('invoices')));
+  assert.ok(log.includes('ROLLBACK'));
+});
+
+test('GET invoice.pdf dari situs lain (Sec-Fetch-Site cross-site/same-site): 403, tanpa menyentuh database', async () => {
+  orderStatus = 'diproses';
+  for (const site of ['cross-site', 'same-site']) {
+    log.length = 0;
+    const res = await get('/5/invoice.pdf', true, { 'Sec-Fetch-Site': site });
+    assert.equal(res.status, 403);
+    assert.equal((await res.json()).error.code, 'CROSS_SITE_REQUEST');
+    assert.equal(log.length, 0); // tidak ada BEGIN, apalagi INSERT invoices
+  }
+});
+
+test('GET invoice.pdf dari dasbor (same-origin) atau URL diketik (none) tetap lewat pemeriksaan asal', async () => {
+  orderStatus = 'menunggu_konfirmasi'; // berhenti di requireConfirmed: bukti permintaan sampai ke route
+  for (const site of ['same-origin', 'none']) {
+    const res = await get('/5/invoice.pdf', true, { 'Sec-Fetch-Site': site });
+    assert.equal((await res.json()).error.code, 'ORDER_NOT_CONFIRMED');
+  }
+});
+
+test('pesanan dibatalkan tanpa invoice: 409 ORDER_CANCELLED, tidak ada INSERT invoices', async () => {
+  orderStatus = 'dibatalkan';
+  log.length = 0;
+  const res = await get('/5/invoice.pdf');
+  assert.equal(res.status, 409);
+  assert.equal((await res.json()).error.code, 'ORDER_CANCELLED');
+  assert.ok(!log.some((s) => s.includes('INSERT INTO invoices')));
   assert.ok(log.includes('ROLLBACK'));
 });
 

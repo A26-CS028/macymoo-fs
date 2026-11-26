@@ -20,12 +20,24 @@ function requireConfirmed(order) {
   }
 }
 
+// GET invoice.pdf mengubah data (menerbitkan nomor), padahal cookie admin SameSite=Lax tetap ikut
+// saat situs lain membuka link ke URL ini. Browser menandai asal permintaan di Sec-Fetch-Site:
+// klik dari dasbor = same-origin, URL diketik/bookmark = none. Selain itu ditolak.
+// Header tidak ada (curl, browser lama) dibiarkan lewat: requireAdmin tetap berlaku.
+function sameOriginOnly(req, res, next) {
+  const site = req.get('Sec-Fetch-Site');
+  if (site && site !== 'same-origin' && site !== 'none') {
+    return next(httpError(403, 'CROSS_SITE_REQUEST', 'Buka invoice dari dasbor admin'));
+  }
+  next();
+}
+
 // Permintaan pertama menerbitkan; berikutnya mengembalikan invoice yang sama. Tidak pernah revisi.
-router.get('/:id(\\d+)/invoice.pdf', requireAdmin, async (req, res, next) => {
+router.get('/:id(\\d+)/invoice.pdf', sameOriginOnly, requireAdmin, async (req, res, next) => {
   try {
     const { detail, invoice } = await withOrder(Number(req.params.id), async (db, o) => {
       requireConfirmed(o);
-      return { invoice: await issueInvoice(db, o.id) };
+      return { invoice: await issueInvoice(db, o.id, new Date(), { allowNew: o.status !== 'dibatalkan' }) };
     });
     // PDF dibuat setelah COMMIT: transaksi dan kunci baris tidak ditahan selama menggambar.
     const pdf = await buildInvoicePdf({ detail, invoice });

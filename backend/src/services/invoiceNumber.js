@@ -37,9 +37,11 @@ async function insertInvoice(db, orderId, invoiceNo, revision, issuedAt) {
 }
 
 // GET invoice.pdf: permintaan pertama menerbitkan, berikutnya mengembalikan yang sama (tidak pernah revisi).
-async function issueInvoice(db, orderId, now = new Date()) {
+// allowNew false (pesanan dibatalkan): invoice lama tetap bisa diunduh, invoice baru tidak diterbitkan.
+async function issueInvoice(db, orderId, now = new Date(), { allowNew = true } = {}) {
   const existing = await latestInvoice(db, orderId);
   if (existing) return { ...existing, display_no: displayNo(existing.invoice_no, existing.revision), created: false };
+  if (!allowNew) throw httpError(409, 'ORDER_CANCELLED', 'Pesanan dibatalkan, invoice baru tidak diterbitkan');
   const date = todayJakarta(now);
   const invoice = await insertInvoice(db, orderId, await nextInvoiceNo(db, date), 1, date);
   return { ...invoice, created: true };

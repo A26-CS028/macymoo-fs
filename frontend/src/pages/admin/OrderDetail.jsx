@@ -108,7 +108,8 @@ export default function OrderDetail() {
                 && aksi('selesai', `/admin/orders/${o.id}/complete`, { method: 'POST' }, `${o.order_code} selesai`)}
               className={`${btn} bg-[#16a34a] text-white`}>Tandai Selesai</button>
           )}
-          {sudahKonfirmasi && (
+          {/* Pesanan dibatalkan tidak mendapat invoice baru; invoice yang terbit sebelum batal tetap bisa diunduh */}
+          {sudahKonfirmasi && (o.status !== 'dibatalkan' || o.invoices.length > 0) && (
             <a href={`${API}/admin/orders/${o.id}/invoice.pdf`} target="_blank" rel="noopener" className={`${btn} bg-white text-ungu-gelap`}>Invoice PDF</a>
           )}
           {aktif && <button type="button" onClick={() => setModal('jadwal')} className={`${btn} bg-white`}>Jadwal ulang</button>}

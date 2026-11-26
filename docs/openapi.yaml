@@ -828,9 +828,15 @@ paths:
         Permintaan pertama menerbitkan invoice (nomor dikunci); permintaan berikutnya
         mengembalikan invoice yang sama. Ongkir ditampilkan per pengiriman.
         Ditolak (409, `ORDER_NOT_CONFIRMED`) untuk pesanan `menunggu_konfirmasi`.
+        Pesanan `dibatalkan`: invoice yang terbit sebelum batal tetap dikembalikan; bila belum ada,
+        ditolak (409, `ORDER_CANCELLED`) dan invoice baru tidak diterbitkan.
 
         Permintaan ini tidak pernah menerbitkan revisi, jadi aman bila halaman dimuat ulang.
         Revisi diterbitkan lewat `POST /admin/orders/{id}/invoice/revise`.
+
+        Karena permintaan pertama mengubah data dan cookie admin `SameSite=Lax` tetap terkirim saat
+        situs lain membuka link ke URL ini, permintaan dengan header `Sec-Fetch-Site` selain
+        `same-origin` atau `none` ditolak (403, `CROSS_SITE_REQUEST`) sebelum sesi diperiksa.
       security:
         - cookieAuth: []
       parameters:
@@ -850,6 +856,16 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Permintaan dari situs lain (Sec-Fetch-Site bukan same-origin/none)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: CROSS_SITE_REQUEST
+                  message: Buka invoice dari dasbor admin
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
