@@ -50,6 +50,15 @@ test('issueInvoice: pertama kali menerbitkan revision 1 dengan nomor sesuai tang
   assert.deepEqual(db.calls[3].params, [7, 'INV/20261121/MYM/003', 1, '2026-11-21']);
 });
 
+test('issueInvoice allowNew false: invoice lama tetap dikembalikan, tanpa invoice lama ditolak ORDER_CANCELLED', async () => {
+  const db = fakeDb([{ rows: [{ id: 1, invoice_no: 'INV/20261120/MYM/001', revision: 1, issued_at: '2026-11-20' }] }]);
+  assert.equal((await issueInvoice(db, 7, new Date(), { allowNew: false })).display_no, 'INV/20261120/MYM/001');
+
+  const empty = fakeDb([{ rows: [] }]);
+  await assert.rejects(issueInvoice(empty, 7, new Date(), { allowNew: false }), (e) => e.status === 409 && e.code === 'ORDER_CANCELLED');
+  assert.equal(empty.calls.length, 1); // hanya SELECT, tanpa advisory lock dan INSERT
+});
+
 test('uji 5: revisi memakai nomor sama, revision + 1, tampil -v2', async () => {
   const db = fakeDb([
     { rows: [{ id: 1, invoice_no: 'INV/20261120/MYM/001', revision: 1, issued_at: '2026-11-20' }] },
