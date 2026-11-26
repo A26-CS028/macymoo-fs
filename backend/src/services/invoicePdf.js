@@ -1,7 +1,8 @@
 // Invoice PDF dibuat saat diminta (serverless, KF bagian 11). Tidak menyentuh database:
 // terima `detail` dari loadDetail (routes/admin/orders.js) dan baris invoice dari invoiceNumber.js.
 // Dua tahap: buildInvoiceModel (data murni, mudah diuji) lalu renderInvoicePdf (menggambar).
-const PDFDocument = require('pdfkit');
+// pdfkit dimuat saat dipakai, bukan saat start: kalau gagal dimuat di runtime (pdfkit me-require
+// fontkit/linebreak yang hanya ESM), yang rusak hanya route invoice, bukan seluruh API.
 
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const METHOD_LABEL = { antar_nabila: 'Diantar Nabila', ambil_sendiri: 'Ambil Sendiri' };
@@ -71,6 +72,7 @@ const RIGHT = 545;
 
 function renderInvoicePdf(model) {
   return new Promise((resolve, reject) => {
+    const PDFDocument = require('pdfkit');
     const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: `Invoice ${model.display_no}`, Author: 'macyourmoo' } });
     const chunks = [];
     doc.on('data', (c) => chunks.push(c));

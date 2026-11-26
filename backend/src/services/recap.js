@@ -2,7 +2,7 @@
 // Sumber angka (openapi RecapRow, pilihan b):
 //   subtotal, shipping_total  <- recap_deliveries, dikelompokkan menurut delivery_date
 //   orders_count, discount_total, paid_net, outstanding <- recap_orders, menurut first_delivery_date
-const ExcelJS = require('exceljs');
+// exceljs dimuat saat ekspor diminta (lihat catatan di invoicePdf.js): gagal muat hanya merusak ekspor xlsx.
 
 const DAY_MS = 86400000;
 const toMs = (ymd) => {
@@ -66,6 +66,7 @@ const COLUMNS = [
 
 // Satu tabel bersih (baris 1 = judul kolom, angka asli bukan rumus) supaya langsung terbaca pandas.
 async function buildRecapWorkbook(recap) {
+  const ExcelJS = require('exceljs');
   const wb = new ExcelJS.Workbook();
   wb.creator = 'macymoo';
   const ws = wb.addWorksheet('Rekap');
