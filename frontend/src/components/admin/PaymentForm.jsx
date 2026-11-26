@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
-import Modal, { ErrorBox, btnSekunder, btnUtama, fieldCls, labelCls } from './Modal'
+import Modal, { ErrorBox, fieldCls, labelCls } from './Modal'
+import Button from '../ui/Button'
 
 // Catat Pembayaran (Figma: Modal — Catat Pembayaran / sheet "Catat pembayaran" HP).
 // DP = nominal bebas di bawah sisa tagihan, Lunas = sisa tagihan, Dikembalikan = refund untuk pesanan dibatalkan.
@@ -128,8 +129,8 @@ export default function PaymentForm({ orderId, onClose, onDone }) {
 
           <ErrorBox error={error} />
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button type="button" onClick={onClose} className={`${btnSekunder} hidden sm:block`}>Batal</button>
-            <button type="submit" disabled={!jenis || saving || !!salah || !amount} className={btnUtama}>{saving ? 'Menyimpan…' : 'Simpan Pembayaran'}</button>
+            <Button varian="sekunder" onClick={onClose} className="hidden sm:inline-flex">Batal</Button>
+            <Button type="submit" memuat={saving} teksMemuat="Menyimpan…" disabled={!jenis || !!salah || !amount}>Simpan Pembayaran</Button>
           </div>
         </form>
       )}

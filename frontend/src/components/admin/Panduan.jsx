@@ -1,6 +1,7 @@
-import Modal, { btnSekunder } from './Modal'
+import Modal from './Modal'
 import Ikon from './Ikon'
 import sampul from '../../assets/landing/menu-desktop.webp'
+import Button from '../ui/Button'
 
 // Panduan Dasbor Nabila (Figma: Modal Panduan Dasbor / Mobile — Panduan dasbor).
 // shortcut: video dan buku saku PDF belum dibuat; tempatnya disiapkan dengan label "Segera". Isi src/href bila sudah ada.
@@ -32,11 +33,10 @@ export default function Panduan({ onClose }) {
         ))}
       </ul>
       <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <button type="button" onClick={onClose} className={btnSekunder}>Tutup</button>
-        <button type="button" disabled title="Buku saku PDF segera tersedia"
-          className="flex h-12 items-center justify-center gap-2 rounded-[10px] bg-ungu px-5 text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60">
+        <Button varian="sekunder" onClick={onClose}>Tutup</Button>
+        <Button disabled title="Buku saku PDF segera tersedia">
           <Ikon d="unduh" />Unduh Buku Saku PDF <span className="text-xs font-semibold">(segera)</span>
-        </button>
+        </Button>
       </div>
     </Modal>
   )
