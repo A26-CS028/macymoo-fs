@@ -10,6 +10,8 @@ import { STATUS, menuLabel } from '../../components/admin/OrderTable'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import RescheduleDialog from '../../components/admin/RescheduleDialog'
 import PaymentForm from '../../components/admin/PaymentForm'
+import Toast from '../../components/ui/Toast'
+import { Memuat } from '../../components/ui/Spinner'
 
 // Dashboard Operasional (Figma: Admin — Dashboard / Admin Mobile — Beranda). Semua angka dihitung dari
 // endpoint yang sudah ada (daftar pesanan, daftar masak, tanggal tutup); belum ada endpoint rekap.
@@ -185,7 +187,7 @@ export default function Dashboard() {
   const konfirmasiLalu = useCallback((o) => { setModal(null); navigate(`/dapur/pesanan/${o.id}`) }, [navigate])
 
   if (error) return <p role="alert" className="mx-auto max-w-[1180px] rounded-[10px] bg-[#fde8e8] px-4 py-3 text-sm font-semibold text-[#b91c1c]">Dashboard belum bisa dimuat: {error} <button type="button" onClick={load} className="ml-2 underline">Coba lagi</button></p>
-  if (!d) return <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat dashboard…</p>
+  if (!d) return <Memuat>Memuat dashboard…</Memuat>
 
   const { orders, closed, kitchen, details, tagih } = d
   const ini = porsiPerTanggal(orders, details, minggu)
@@ -230,7 +232,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
+      {notice && <Toast judul={notice} onClose={() => setNotice('')} />}
 
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
         <Stat utama to="/dapur/pesanan" label="Pesanan minggu ini" angka={pesananMinggu} sub={`${porsiHariIni} porsi hari ini`} />

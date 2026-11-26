@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
 import { labelTanggal } from '../../utils/date'
-import Modal, { ErrorBox, btnSekunder, btnUtama, fieldCls, labelCls } from './Modal'
+import Modal, { ErrorBox, fieldCls, labelCls } from './Modal'
+import Button from '../ui/Button'
 
 // Konfirmasi pesanan (Figma: Modal — Konfirmasi Pesanan): ongkir per pengiriman Antar Nabila, diskon, waktu bayar.
 // Total di modal hanya pratinjau; total resmi dihitung server dan tampil di tabel setelah disimpan.
@@ -120,8 +121,8 @@ export default function ConfirmDialog({ orderId, onClose, onDone }) {
 
           <ErrorBox error={error} />
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className={btnSekunder}>Batal</button>
-            <button type="submit" disabled={saving} className={btnUtama}>{saving ? 'Menyimpan…' : 'Konfirmasi Pesanan'}</button>
+            <Button varian="sekunder" onClick={onClose}>Batal</Button>
+            <Button type="submit" memuat={saving} teksMemuat="Menyimpan…">Konfirmasi Pesanan</Button>
           </div>
         </form>
       )}

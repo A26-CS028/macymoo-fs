@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import { todayJakarta, addDays, labelTanggal } from '../../utils/date'
 import { localPhoto } from '../../utils/menuPhoto'
+import { Memuat } from '../../components/ui/Spinner'
 
 // Daftar Masak (Figma: Admin — Daftar Masak / Mobile — Daftar Masak). Per tanggal kirim:
 // Siap Dimasak = Diproses; Belum Dibayar = Menunggu Pembayaran, jangan dimasak dulu (KF 5).
@@ -131,7 +132,7 @@ export default function Kitchen() {
         ))}
       </div>
 
-      {!k && !error && <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat daftar masak…</p>}
+      {!k && !error && <Memuat>Memuat daftar masak…</Memuat>}
       {k && (
         <div className="mt-4 grid gap-4 lg:mt-5 lg:grid-cols-[730fr_380fr] lg:gap-5">
           <section className={`${tab === 'siap' ? '' : 'hidden'} lg:block lg:rounded-[20px] lg:bg-white lg:p-6 print:block`} aria-labelledby="judul-siap">

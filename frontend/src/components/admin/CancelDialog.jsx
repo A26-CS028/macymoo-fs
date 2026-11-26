@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
-import Modal, { Info, ErrorBox, btnSekunder, fieldCls, labelCls } from './Modal'
+import Modal, { Info, ErrorBox, fieldCls, labelCls } from './Modal'
+import Button from '../ui/Button'
 
 // Batalkan pesanan (Figma: Modal — Batalkan Pesanan). Semua pembatalan dilakukan Nabila (KF 5).
 const ALASAN = ['Permintaan pelanggan', 'Lewat batas bayar 4 jam', 'Pelanggan menolak jadwal ulang', 'Kapasitas penuh', 'Lainnya']
@@ -50,10 +51,8 @@ export default function CancelDialog({ order, onClose, onDone }) {
         )}
         <ErrorBox error={error} />
         <div className="grid grid-cols-2 gap-3">
-          <button type="button" onClick={onClose} className={btnSekunder}>Kembali</button>
-          <button type="submit" disabled={saving} className="h-12 rounded-[10px] bg-[#dc2626] text-[15px] font-bold text-white disabled:opacity-50">
-            {saving ? 'Membatalkan…' : 'Batalkan Pesanan'}
-          </button>
+          <Button varian="sekunder" onClick={onClose}>Kembali</Button>
+          <Button type="submit" varian="bahaya" memuat={saving} teksMemuat="Membatalkan…">Batalkan Pesanan</Button>
         </div>
       </form>
     </Modal>

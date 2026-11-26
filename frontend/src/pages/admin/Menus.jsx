@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
 import { menuPhoto, fallbackToLocal } from '../../utils/menuPhoto'
-import Modal, { ErrorBox, btnSekunder, btnUtama, fieldCls, labelCls } from '../../components/admin/Modal'
+import Modal, { ErrorBox, fieldCls, labelCls } from '../../components/admin/Modal'
+import Toast from '../../components/ui/Toast'
+import Button from '../../components/ui/Button'
 
 // Kelola Menu & Harga (Figma: Admin — Kelola Menu & Harga / Mobile — Kelola Menu & Harga).
 // Harga dan status Tersedia diubah di kartu lalu disimpan (per kartu atau Simpan Semua); foto langsung tersimpan.
@@ -116,13 +118,13 @@ export default function Menus() {
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setDetail('baru')} className="h-11 rounded-[10px] bg-white px-4 text-[15px] font-bold">+ Tambah menu</button>
-          <button type="button" onClick={() => simpan(kotor)} disabled={!kotor.length || !!saving} className={`${btnUtama} hidden h-11 lg:flex`}>
-            {saving === 'semua' ? 'Menyimpan…' : 'Simpan Semua'}
-          </button>
+          <Button onClick={() => simpan(kotor)} memuat={saving === 'semua'} teksMemuat="Menyimpan…" disabled={!kotor.length || !!saving} className="hidden h-11 lg:inline-flex">
+            Simpan Semua
+          </Button>
         </div>
       </div>
 
-      {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
+      {notice && <Toast judul={notice} onClose={() => setNotice('')} />}
       {error && <div className="mt-4"><ErrorBox error={error} /></div>}
       {!menus && !error && <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat menu…</p>}
       {menus?.length === 0 && <p className="mt-5 rounded-[16px] bg-white p-5 text-sm font-semibold">Belum ada menu. Pilih + Tambah menu untuk mulai.</p>}
@@ -195,9 +197,9 @@ export default function Menus() {
       {/* HP: simpan semua perubahan */}
       {kotor.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 bg-white p-4 shadow-[0_-8px_24px_rgba(30,5,77,0.08)] lg:hidden">
-          <button type="button" onClick={() => simpan(kotor)} disabled={!!saving} className={`${btnUtama} h-14 w-full text-[17px]`}>
-            {saving ? 'Menyimpan…' : `Simpan perubahan (${kotor.length})`}
-          </button>
+          <Button onClick={() => simpan(kotor)} memuat={!!saving} teksMemuat="Menyimpan…" className="h-14 w-full text-[17px]">
+            {`Simpan perubahan (${kotor.length})`}
+          </Button>
         </div>
       )}
 
@@ -285,8 +287,8 @@ function DetailMenu({ menu, onClose, onSaved }) {
         )}
         <ErrorBox error={error} />
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className={btnSekunder}>{baru ? 'Batal' : 'Tutup'}</button>
-          <button type="submit" disabled={saving || uploading} className={btnUtama}>{saving ? 'Menyimpan…' : baru ? 'Tambah menu' : 'Simpan nama & deskripsi'}</button>
+          <Button varian="sekunder" onClick={onClose}>{baru ? 'Batal' : 'Tutup'}</Button>
+          <Button type="submit" memuat={saving} teksMemuat="Menyimpan…" disabled={uploading}>{baru ? 'Tambah menu' : 'Simpan nama & deskripsi'}</Button>
         </div>
       </form>
       {!baru && <Opsi menu={menu} onChange={(m) => onSaved(m, false)} />}

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import { todayJakarta, addDays, labelTanggal } from '../../utils/date'
-import Modal, { Info, ErrorBox, btnSekunder, btnUtama, fieldCls, labelCls } from './Modal'
+import Modal, { Info, ErrorBox, fieldCls, labelCls } from './Modal'
+import Button from '../ui/Button'
 
 // Jadwalkan ulang satu pengiriman (Figma: Modal — Jadwalkan Ulang). Status pesanan tidak berubah;
 // alasan masuk riwayat, lalu pelanggan dikabari lewat wa.me (KF 6).
@@ -113,10 +114,10 @@ export default function RescheduleDialog({ orderId, onClose, onDone }) {
 
           <ErrorBox error={error} />
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className={btnSekunder}>Batal</button>
-            <button type="submit" disabled={saving} className={btnUtama}>
-              {saving ? 'Menyimpan…' : notify && canNotify ? 'Simpan & Buka WhatsApp' : 'Simpan'}
-            </button>
+            <Button varian="sekunder" onClick={onClose}>Batal</Button>
+            <Button type="submit" memuat={saving} teksMemuat="Menyimpan…">
+              {notify && canNotify ? 'Simpan & Buka WhatsApp' : 'Simpan'}
+            </Button>
           </div>
         </form>
       )}

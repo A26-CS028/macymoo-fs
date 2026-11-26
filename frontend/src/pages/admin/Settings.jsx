@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import { todayJakarta, addDays, labelTanggal } from '../../utils/date'
 import { ErrorBox, fieldCls, labelCls } from '../../components/admin/Modal'
+import Toast from '../../components/ui/Toast'
+import Button from '../../components/ui/Button'
 
 // Bank, QRIS & Tutup Tanggal (Figma: Admin — Bank, QRIS & Tutup Tanggal / Mobile — Tutup Tanggal & Pembayaran).
 // Rekening, QRIS, dan WhatsApp disimpan sekaligus (PUT /admin/settings mengganti seluruh objek).
@@ -9,7 +11,6 @@ const KOSONG = { bank_name: '', bank_account_number: '', bank_account_holder: ''
 const BANK = ['BCA', 'BRI', 'BNI', 'Mandiri', 'BSI', 'CIMB Niaga', 'Permata', 'SeaBank', 'Bank Jago', 'blu by BCA Digital']
 const HARI = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
 const kartu = 'rounded-[20px] bg-white p-5 lg:p-6'
-const btnUtama = 'flex h-11 items-center justify-center rounded-[10px] bg-ungu px-5 text-[15px] font-bold text-white disabled:opacity-50'
 const rek = (n) => (n || '').replace(/(\d{4})(?=\d)/g, '$1 ')
 // Isian WA boleh 08…/+62…; disimpan 62… sesuai validator backend
 const waSimpan = (s) => s.replace(/[\s-]/g, '').replace(/^\+/, '').replace(/^0/, '62')
@@ -166,10 +167,10 @@ export default function Settings() {
           <h1 className="text-[26px] font-extrabold max-lg:hidden lg:text-[30px]">Bank, QRIS & Tutup Tanggal</h1>
           <p className="text-sm font-medium text-abu max-lg:hidden">Atur cara bayar dan tanggal Nabila tidak menerima pesanan</p>
         </div>
-        <button type="submit" disabled={saving || !berubah} className={`${btnUtama} hidden lg:flex`}>{saving ? 'Menyimpan…' : 'Simpan Pengaturan'}</button>
+        <Button type="submit" memuat={saving} teksMemuat="Menyimpan…" disabled={!berubah} className="hidden h-11 lg:inline-flex">Simpan Pengaturan</Button>
       </div>
 
-      {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
+      {notice && <Toast judul={notice} onClose={() => setNotice('')} />}
       {error && <div className="mt-4"><ErrorBox error={error} /></div>}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[290fr_320fr_480fr] lg:gap-5">
@@ -216,7 +217,7 @@ export default function Settings() {
                 {form.bank_account_holder && <p className="text-xs font-medium text-abu-label">a.n. {form.bank_account_holder}</p>}
               </div>
             )}
-            <button type="submit" disabled={saving || !berubah} className={`${btnUtama} mt-auto w-full`}>{saving ? 'Menyimpan…' : 'Simpan Rekening'}</button>
+            <Button type="submit" memuat={saving} teksMemuat="Menyimpan…" disabled={!berubah} className="mt-auto h-11 w-full">Simpan Rekening</Button>
           </div>
         </section>
 

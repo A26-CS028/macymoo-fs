@@ -76,7 +76,5 @@ export function ErrorBox({ error }) {
   )
 }
 
-export const btnSekunder = 'h-12 rounded-[10px] bg-krem-field px-5 text-[15px] font-bold disabled:opacity-50'
-export const btnUtama = 'flex h-12 items-center justify-center gap-2 rounded-[10px] bg-ungu px-5 text-[15px] font-bold text-white disabled:opacity-50'
 export const fieldCls = 'h-12 w-full rounded-[10px] bg-krem-field px-4 text-[15px] font-medium outline-none focus:ring-2 focus:ring-ungu'
 export const labelCls = 'mb-2 block text-[13px] font-bold'

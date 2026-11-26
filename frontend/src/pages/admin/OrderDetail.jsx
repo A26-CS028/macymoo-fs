@@ -8,6 +8,8 @@ import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import RescheduleDialog from '../../components/admin/RescheduleDialog'
 import CancelDialog from '../../components/admin/CancelDialog'
 import PaymentForm from '../../components/admin/PaymentForm'
+import { Memuat } from '../../components/ui/Spinner'
+import Button, { kelasTombol } from '../../components/ui/Button'
 
 // Detail pesanan: alur setelah konfirmasi (KF 5) — Kirim Tagihan, Catat Pembayaran, Terkirim per pengiriman,
 // Selesai, dan Invoice PDF. Figma tidak punya layar ini; disusun dari kartu dan modal dasbor yang sama.
@@ -28,7 +30,6 @@ const JENIS_BAYAR = { dp: 'DP', pelunasan: 'Pelunasan', refund: 'Refund' }
 const METODE = { qris: 'QRIS', transfer: 'Transfer', tunai: 'Tunai' }
 
 const kartu = 'rounded-[20px] bg-white p-5 lg:p-6'
-const btn = 'flex h-11 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-bold disabled:opacity-50'
 
 function Badge({ status }) {
   const [label, text, dot] = STATUS[status]
@@ -67,7 +68,7 @@ export default function OrderDetail() {
   }
 
   if (error) return <p role="alert" className="mx-auto max-w-[1180px] rounded-[10px] bg-[#fde8e8] px-4 py-3 text-sm font-semibold text-[#b91c1c]">{error} <Link to="/dapur/pesanan" className="underline">Kembali ke Pesanan Masuk</Link></p>
-  if (!o) return <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat pesanan…</p>
+  if (!o) return <Memuat>Memuat pesanan…</Memuat>
 
   const t = o.totals
   const aktif = ['menunggu_konfirmasi', 'menunggu_pembayaran', 'diproses'].includes(o.status)
@@ -96,24 +97,24 @@ export default function OrderDetail() {
         </div>
         {/* Aksi utama sesuai status (KF 5) */}
         <div className="flex flex-wrap gap-2">
-          {o.status === 'menunggu_konfirmasi' && <button type="button" onClick={() => setModal('konfirmasi')} className={`${btn} bg-ungu text-white`}>Konfirmasi</button>}
+          {o.status === 'menunggu_konfirmasi' && <Button onClick={() => setModal('konfirmasi')}>Konfirmasi</Button>}
           {tertagih && (
-            <button type="button" disabled={busy === 'tagih'} onClick={() => aksi('tagih', `/admin/orders/${o.id}/send-bill`, { method: 'POST' }, (r) => `Tagihan ${rupiah(t.balance_due)} siap dikirim${r.pay_deadline_at ? `; batas bayar ${jam.format(new Date(r.pay_deadline_at))}` : ''}`)}
-              className={`${btn} bg-ungu-gelap text-white`}>{busy === 'tagih' ? 'Mengirim…' : o.invoice_sent_at ? 'Kirim ulang tagihan' : 'Kirim Tagihan'}</button>
+            <Button varian="gelap" memuat={busy === 'tagih'} onClick={() => aksi('tagih', `/admin/orders/${o.id}/send-bill`, { method: 'POST' }, (r) => `Tagihan ${rupiah(t.balance_due)} siap dikirim${r.pay_deadline_at ? `; batas bayar ${jam.format(new Date(r.pay_deadline_at))}` : ''}`)}
+            >{o.invoice_sent_at ? 'Kirim ulang tagihan' : 'Kirim Tagihan'}</Button>
           )}
-          {bisaBayar && <button type="button" onClick={() => setModal('bayar')} className={`${btn} bg-[#2563eb] text-white`}>{o.status === 'dibatalkan' ? 'Catat Refund' : 'Catat Pembayaran'}</button>}
+          {bisaBayar && <Button varian="biru" onClick={() => setModal('bayar')}>{o.status === 'dibatalkan' ? 'Catat Refund' : 'Catat Pembayaran'}</Button>}
           {o.status === 'diproses' && (
-            <button type="button" disabled={!!belumTerkirim || busy === 'selesai'} title={belumTerkirim ? `${belumTerkirim} pengiriman belum terkirim` : undefined}
+            <Button varian="hijau" memuat={busy === 'selesai'} teksMemuat="Menyimpan…" disabled={!!belumTerkirim} title={belumTerkirim ? `${belumTerkirim} pengiriman belum terkirim` : undefined}
               onClick={() => (t.balance_due === 0 || window.confirm(`Masih ada sisa tagihan ${rupiah(t.balance_due)}. Tetap tandai selesai? Pembayaran masih bisa dicatat setelahnya.`))
                 && aksi('selesai', `/admin/orders/${o.id}/complete`, { method: 'POST' }, `${o.order_code} selesai`)}
-              className={`${btn} bg-[#16a34a] text-white`}>Tandai Selesai</button>
+            >Tandai Selesai</Button>
           )}
           {/* Pesanan dibatalkan tidak mendapat invoice baru; invoice yang terbit sebelum batal tetap bisa diunduh */}
           {sudahKonfirmasi && (o.status !== 'dibatalkan' || o.invoices.length > 0) && (
-            <a href={`${API}/admin/orders/${o.id}/invoice.pdf`} target="_blank" rel="noopener" className={`${btn} bg-white text-ungu-gelap`}>Invoice PDF</a>
+            <a href={`${API}/admin/orders/${o.id}/invoice.pdf`} target="_blank" rel="noopener" className={`${kelasTombol('putih')} text-ungu-gelap`}>Invoice PDF</a>
           )}
-          {aktif && <button type="button" onClick={() => setModal('jadwal')} className={`${btn} bg-white`}>Jadwal ulang</button>}
-          {aktif && <button type="button" onClick={() => setModal('batal')} className={`${btn} bg-white text-[#dc2626]`}>Batalkan</button>}
+          {aktif && <Button varian="putih" onClick={() => setModal('jadwal')}>Jadwal ulang</Button>}
+          {aktif && <Button varian="putih" onClick={() => setModal('batal')} className="text-[#dc2626]">Batalkan</Button>}
         </div>
       </div>
 
@@ -143,10 +144,10 @@ export default function OrderDetail() {
                   {terkirim
                     ? <span className="rounded-full bg-[#dcfce7] px-3 py-1 text-xs font-bold text-[#16a34a]">Terkirim {d.delivered_at && jam.format(new Date(d.delivered_at))}</span>
                     : o.status === 'diproses' && (
-                      <button type="button" disabled={busy === `kirim-${d.id}`}
+                      <Button varian="sekunder" ukuran="sm" memuat={busy === `kirim-${d.id}`} teksMemuat="Menyimpan…"
                         onClick={() => (d.delivery_date <= todayJakarta() || window.confirm(`Tanggal kirimnya ${labelTanggal(d.delivery_date).panjang}, belum tiba. Tetap tandai terkirim?`))
                           && aksi(`kirim-${d.id}`, `/admin/deliveries/${d.id}`, { method: 'PATCH', body: JSON.stringify({ delivery_status: 'terkirim' }) }, `Pengiriman ${labelTanggal(d.delivery_date).panjang} ditandai terkirim`)}
-                        className={`${btn} h-9 bg-krem-field`}>Tandai Terkirim</button>
+                      >Tandai Terkirim</Button>
                     )}
                 </div>
                 <ul className="mt-4 divide-y divide-krem-field">
