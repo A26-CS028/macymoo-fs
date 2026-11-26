@@ -11,6 +11,7 @@ router.use('/admin/settings', require('./admin/settings'));
 router.use('/admin/orders', require('./admin/maclab'));
 router.use('/admin', require('./admin/fulfillment'));
 router.use('/admin/orders', require('./admin/payments'));
+router.use('/admin/orders', require('./admin/invoices'));
 router.use('/admin/orders', require('./admin/orders'));
 
 router.use(require('./public/menus'));
