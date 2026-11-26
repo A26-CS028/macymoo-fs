@@ -837,6 +837,8 @@ paths:
         Karena permintaan pertama mengubah data dan cookie admin `SameSite=Lax` tetap terkirim saat
         situs lain membuka link ke URL ini, permintaan dengan header `Sec-Fetch-Site` selain
         `same-origin` atau `none` ditolak (403, `CROSS_SITE_REQUEST`) sebelum sesi diperiksa.
+        Tanpa header `Sec-Fetch-Site` (browser lama, curl), `Origin` atau `Referer` wajib sama
+        dengan `FRONTEND_ORIGIN`; tanpa keduanya juga ditolak.
       security:
         - cookieAuth: []
       parameters:
@@ -857,7 +859,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Permintaan dari situs lain (Sec-Fetch-Site bukan same-origin/none)
+          description: Permintaan dari situs lain (Sec-Fetch-Site bukan same-origin/none, atau tanpa Sec-Fetch-Site dan Origin/Referer bukan FRONTEND_ORIGIN)
           content:
             application/json:
               schema:

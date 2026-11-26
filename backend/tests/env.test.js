@@ -44,6 +44,10 @@ test('AI_SERVICE_URL bukan https (kecuali lokal) atau tanpa AI_INTERNAL_SECRET: 
     [{ AI_SERVICE_URL: 'http://ai.contoh.com', AI_INTERNAL_SECRET: S }, /https/],
     [{ AI_SERVICE_URL: 'http://localhost.contoh.com', AI_INTERNAL_SECRET: S }, /https/],
     [{ AI_SERVICE_URL: 'ai.contoh.com', AI_INTERNAL_SECRET: S }, /https/],
+    // diawali 'http://localhost:' tetapi host sebenarnya contoh.com (bagian sebelum @ = nama pengguna)
+    [{ AI_SERVICE_URL: 'http://localhost:80@ai.contoh.com', AI_INTERNAL_SECRET: S }, /https/],
+    [{ AI_SERVICE_URL: 'http://127.0.0.1.contoh.com', AI_INTERNAL_SECRET: S }, /https/],
+    [{ AI_SERVICE_URL: 'ftp://ai.contoh.com', AI_INTERNAL_SECRET: S }, /https/],
     [{ AI_SERVICE_URL: 'https://ai.contoh.com', AI_INTERNAL_SECRET: undefined }, /AI_INTERNAL_SECRET/],
     [{ AI_SERVICE_URL: 'https://ai.contoh.com', AI_INTERNAL_SECRET: '   ' }, /AI_INTERNAL_SECRET/],
   ];
@@ -63,6 +67,7 @@ test('konfigurasi AI benar atau AI tidak dipakai: aktif sesuai env, tanpa pering
   assert.strictEqual(loadEnv({ AI_SERVICE_URL: 'https://ai.contoh.com', AI_INTERNAL_SECRET: S }).aiServiceUrl, 'https://ai.contoh.com');
   assert.strictEqual(loadEnv({ AI_SERVICE_URL: ' https://ai.contoh.com\n', AI_INTERNAL_SECRET: S }).aiServiceUrl, 'https://ai.contoh.com');
   assert.strictEqual(loadEnv({ AI_SERVICE_URL: 'http://localhost:8000', AI_INTERNAL_SECRET: S }).aiServiceUrl, 'http://localhost:8000');
+  assert.strictEqual(loadEnv({ AI_SERVICE_URL: 'http://127.0.0.1:8000/', AI_INTERNAL_SECRET: S }).aiServiceUrl, 'http://127.0.0.1:8000/');
   assert.strictEqual(loadEnv({ AI_SERVICE_URL: undefined, AI_INTERNAL_SECRET: undefined }).aiServiceUrl, undefined);
   assert.strictEqual(warn.mock.callCount(), 0);
 });

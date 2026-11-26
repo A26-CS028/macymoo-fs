@@ -5,6 +5,7 @@
 const express = require('express');
 const { requireAdmin } = require('../../middleware/auth');
 const { httpError } = require('../../middleware/errorHandler');
+const { frontendOrigin } = require('../../config/env');
 const { issueInvoice, reviseInvoice, fileName } = require('../../services/invoiceNumber');
 const { buildInvoicePdf } = require('../../services/invoicePdf');
 const { withOrder } = require('./orders'); // transaksi + detail yang sama dengan dasbor
@@ -23,12 +24,32 @@ function requireConfirmed(order) {
 // GET invoice.pdf mengubah data (menerbitkan nomor), padahal cookie admin SameSite=Lax tetap ikut
 // saat situs lain membuka link ke URL ini. Browser menandai asal permintaan di Sec-Fetch-Site:
 // klik dari dasbor = same-origin, URL diketik/bookmark = none. Selain itu ditolak.
-// Header tidak ada (curl, browser lama) dibiarkan lewat: requireAdmin tetap berlaku.
+// Browser lama tanpa Sec-Fetch-Site (mis. Safari < 16.4) tetap mengirim cookie Lax, jadi asal
+// diambil dari Origin atau Referer dan harus sama dengan FRONTEND_ORIGIN. Klik dari dasbor mengirim
+// Referer (Referrer-Policy strict-origin-when-cross-origin, frontend/vercel.json). Tanpa keduanya
+// ditolak, karena situs lain bisa membuang Referer (referrerpolicy="no-referrer").
+const FRONTEND = (() => {
+  try {
+    return new URL(frontendOrigin).origin;
+  } catch {
+    return null;
+  }
+})();
+
+function dariDasbor(req) {
+  const asal = req.get('Origin') || req.get('Referer');
+  if (!asal || !FRONTEND) return false;
+  try {
+    return new URL(asal).origin === FRONTEND;
+  } catch {
+    return false; // termasuk Origin: null
+  }
+}
+
 function sameOriginOnly(req, res, next) {
   const site = req.get('Sec-Fetch-Site');
-  if (site && site !== 'same-origin' && site !== 'none') {
-    return next(httpError(403, 'CROSS_SITE_REQUEST', 'Buka invoice dari dasbor admin'));
-  }
+  const lolos = site ? site === 'same-origin' || site === 'none' : dariDasbor(req);
+  if (!lolos) return next(httpError(403, 'CROSS_SITE_REQUEST', 'Buka invoice dari dasbor admin'));
   next();
 }
 

@@ -37,7 +37,13 @@ before(async () => {
 after(() => server.close());
 
 const cookie = `${COOKIE_NAME}=${jwt.sign({ sub: '7', username: 'nabila' }, process.env.JWT_SECRET)}`;
-const get = (path, admin = true, extra = {}) => fetch(`${base}${path}`, { headers: { ...(admin ? { cookie } : {}), ...extra } });
+// Bawaan: klik dari dasbor di browser modern (Sec-Fetch-Site same-origin). `extra` bisa menggantinya;
+// nilai undefined menghapus header (browser lama tanpa Fetch Metadata).
+const get = (path, admin = true, extra = {}) => {
+  const headers = { 'Sec-Fetch-Site': 'same-origin', ...(admin ? { cookie } : {}), ...extra };
+  for (const k of Object.keys(headers)) if (headers[k] === undefined) delete headers[k];
+  return fetch(`${base}${path}`, { headers });
+};
 const post = (path, admin = true) => fetch(`${base}${path}`, { method: 'POST', headers: admin ? { cookie } : {} });
 
 test('tanpa sesi admin: kedua route 401', async () => {
@@ -77,6 +83,32 @@ test('GET invoice.pdf dari dasbor (same-origin) atau URL diketik (none) tetap le
   for (const site of ['same-origin', 'none']) {
     const res = await get('/5/invoice.pdf', true, { 'Sec-Fetch-Site': site });
     assert.equal((await res.json()).error.code, 'ORDER_NOT_CONFIRMED');
+  }
+});
+
+// Browser lama tanpa Sec-Fetch-Site: asal dari Origin/Referer harus FRONTEND_ORIGIN (http://localhost:5173 di tes ini).
+test('tanpa Sec-Fetch-Site: Origin/Referer dari dasbor lewat, situs lain atau tanpa asal 403 tanpa menyentuh database', async () => {
+  orderStatus = 'menunggu_konfirmasi'; // yang lewat berhenti di requireConfirmed
+  const tanpaFetchMetadata = { 'Sec-Fetch-Site': undefined };
+  for (const asal of [{ Referer: 'http://localhost:5173/dapur/pesanan/5' }, { Origin: 'http://localhost:5173' }]) {
+    const res = await get('/5/invoice.pdf', true, { ...tanpaFetchMetadata, ...asal });
+    assert.equal((await res.json()).error.code, 'ORDER_NOT_CONFIRMED');
+  }
+  orderStatus = 'diproses';
+  const ditolak = [
+    {}, // tanpa Origin dan Referer: situs lain bisa membuang Referer
+    { Referer: 'https://situs-lain.contoh/halaman' },
+    { Referer: 'http://localhost:5173.contoh.com/' },
+    { Origin: 'null' },
+    { Origin: 'https://situs-lain.contoh' },
+    { Referer: 'bukan url' },
+  ];
+  for (const asal of ditolak) {
+    log.length = 0;
+    const res = await get('/5/invoice.pdf', true, { ...tanpaFetchMetadata, ...asal });
+    assert.equal(res.status, 403, JSON.stringify(asal));
+    assert.equal((await res.json()).error.code, 'CROSS_SITE_REQUEST');
+    assert.equal(log.length, 0);
   }
 });
 
