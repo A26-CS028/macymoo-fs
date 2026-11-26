@@ -4,8 +4,8 @@ const env = {
   jwtSecret: process.env.JWT_SECRET,
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
   // Layanan AI boleh tidak aktif (uji 13), jadi tidak ikut dicek di bawah.
-  aiServiceUrl: process.env.AI_SERVICE_URL,
-  aiInternalSecret: process.env.AI_INTERNAL_SECRET,
+  aiServiceUrl: process.env.AI_SERVICE_URL?.trim() || undefined,
+  aiInternalSecret: process.env.AI_INTERNAL_SECRET?.trim() || undefined,
   aiTimeoutMs: Number(process.env.AI_TIMEOUT_MS) || 3000,
 };
 
@@ -16,11 +16,20 @@ if (!env.jwtSecret || env.jwtSecret.length < 32) problems.push('JWT_SECRET minim
 // Tanpa FRONTEND_ORIGIN, cors() jatuh ke Access-Control-Allow-Origin: *.
 if (!env.frontendOrigin) problems.push('FRONTEND_ORIGIN kosong');
 if (!env.turnstileSecretKey) problems.push('TURNSTILE_SECRET_KEY kosong');
-// Catatan pelanggan dan X-Internal-Secret dikirim ke AI_SERVICE_URL: wajib https (kecuali lokal) dan secret wajib ada.
-if (env.aiServiceUrl) {
-  if (!/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)(:|\/|$))/.test(env.aiServiceUrl)) problems.push('AI_SERVICE_URL wajib https');
-  if (!env.aiInternalSecret) problems.push('AI_INTERNAL_SECRET kosong');
-}
 if (problems.length) throw new Error(`Konfigurasi tidak valid: ${problems.join(', ')}`);
+
+// Catatan pelanggan dan X-Internal-Secret dikirim ke AI_SERVICE_URL: wajib https (kecuali lokal) dan secret wajib ada.
+// AI opsional (uji 13/14), jadi salah konfigurasi TIDAK menghentikan backend: AI dimatikan
+// (aiServiceUrl dikosongkan, callAI mengembalikan null) dan alasannya dicatat tanpa nilai env.
+const aiProblems = [];
+if (env.aiServiceUrl) {
+  if (!/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)(:|\/|$))/.test(env.aiServiceUrl)) aiProblems.push('AI_SERVICE_URL wajib https');
+  if (!env.aiInternalSecret) aiProblems.push('AI_INTERNAL_SECRET kosong');
+}
+if (aiProblems.length) {
+  console.warn(`[config] Layanan AI dimatikan: ${aiProblems.join(', ')}`);
+  env.aiServiceUrl = undefined;
+}
+env.aiProblems = aiProblems;
 
 module.exports = env;
