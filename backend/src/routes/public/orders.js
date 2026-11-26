@@ -14,6 +14,7 @@ const router = express.Router();
 
 async function createOrder(body) {
   const client = await pool.connect();
+  let broken; // ROLLBACK gagal = koneksi rusak, release(err) membuangnya dari pool
   try {
     await client.query('BEGIN');
 
@@ -153,10 +154,10 @@ async function createOrder(body) {
       created_at: orderRes.rows[0].created_at,
     };
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    await client.query('ROLLBACK').catch((e) => { broken = e; });
     throw err;
   } finally {
-    client.release();
+    client.release(broken);
   }
 }
 

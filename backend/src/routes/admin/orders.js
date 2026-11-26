@@ -190,6 +190,7 @@ router.get('/:id(\\d+)', async (req, res, next) => {
 // Jalankan perubahan dalam transaksi dengan baris pesanan dikunci (dua klik bersamaan tidak dobel)
 async function withOrder(id, fn) {
   const client = await pool.connect();
+  let broken; // ROLLBACK gagal = koneksi rusak, release(err) membuangnya dari pool
   try {
     await client.query('BEGIN');
     const { rows } = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [id]);
@@ -199,10 +200,10 @@ async function withOrder(id, fn) {
     await client.query('COMMIT');
     return { detail, ...extra };
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    await client.query('ROLLBACK').catch((e) => { broken = e; });
     throw err;
   } finally {
-    client.release();
+    client.release(broken);
   }
 }
 
