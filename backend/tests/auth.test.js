@@ -74,10 +74,13 @@ test('error 500 tidak membocorkan pesan internal', () => {
 
 test('error pg (punya code, tanpa status) tetap disembunyikan', () => {
   const res = { status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; } };
-  const err = Object.assign(new Error('duplicate key value violates unique constraint "orders_public_token_key"'), { code: '23505' });
+  const err = Object.assign(new Error('duplicate key value violates unique constraint "orders_public_token_key"'), {
+    code: '23505',
+    detail: 'Key (public_token)=(token-rahasia) already exists.',
+  });
   const log = console.error;
   let logged = false;
-  console.error = () => { logged = true; };
+  console.error = (...args) => { logged = true; assert.ok(!JSON.stringify(args).includes('token-rahasia')); };
   errorHandler(err, {}, res, () => {});
   console.error = log;
   assert.strictEqual(res.statusCode, 500);

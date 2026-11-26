@@ -14,7 +14,7 @@ const reviewCreate = Joi.object({
   rating: Joi.number().integer().min(1).max(5).required().label('Rating')
     .messages({ 'number.base': 'Pilih 1 sampai 5 bintang', 'number.min': 'Pilih 1 sampai 5 bintang', 'number.max': 'Pilih 1 sampai 5 bintang', 'number.integer': 'Pilih 1 sampai 5 bintang', 'any.required': 'Pilih 1 sampai 5 bintang' }),
   comment: Joi.string().trim().max(200).allow('').label('Komentar').messages({ 'string.max': 'Komentar maksimal 200 karakter' }),
-  turnstile_token: Joi.string().min(1).required().label('Verifikasi keamanan'),
+  turnstile_token: Joi.string().min(1).max(2048).required().label('Verifikasi keamanan'),
 }).prefs({ errors: { wrap: { label: false } } });
 
 router.get('/reviews', async (req, res, next) => {

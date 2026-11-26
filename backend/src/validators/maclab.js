@@ -45,7 +45,7 @@ const item = Joi.object({
     .label('Jenis item'),
   menu_id: Joi.when('item_type', {
     is: 'menu',
-    then: Joi.number().integer().positive().required().label('Menu'),
+    then: Joi.number().integer().positive().max(2147483647).required().label('Menu'),
     otherwise: Joi.any().strip(),
   }),
   custom_name: Joi.when('item_type', {
@@ -59,7 +59,7 @@ const item = Joi.object({
     otherwise: Joi.number().integer().min(0).max(10000000).required().label('Harga item'),
   }),
   qty: Joi.number().integer().min(1).max(200).required().label('Jumlah'),
-  option_ids: Joi.array().items(Joi.number().integer().positive()).max(5).default([]).label('Opsi'), // 5 = jumlah option_group
+  option_ids: Joi.array().items(Joi.number().integer().positive().max(2147483647)).max(5).default([]).label('Opsi'), // 5 = jumlah option_group
   note: Joi.string().trim().max(500).allow('').label('Catatan'),
 });
 

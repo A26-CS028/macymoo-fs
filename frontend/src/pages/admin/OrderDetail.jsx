@@ -46,7 +46,7 @@ export default function OrderDetail() {
   const [busy, setBusy] = useState('')
 
   const load = useCallback(() => {
-    api(`/admin/orders/${id}`).then(setO).catch((e) => setError(e.status === 404 ? 'Pesanan tidak ditemukan.' : e.message))
+    api(`/admin/orders/${encodeURIComponent(id)}`).then(setO).catch((e) => setError(e.status === 404 ? 'Pesanan tidak ditemukan.' : e.message))
   }, [id])
   useEffect(load, [load])
 

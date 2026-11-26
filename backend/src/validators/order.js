@@ -41,14 +41,14 @@ const publicOrderCreate = Joi.object({
     .max(20)
     .items(
       Joi.object({
-        menu_id: Joi.number().integer().positive().required().label('Menu'),
+        menu_id: Joi.number().integer().positive().max(2147483647).required().label('Menu'),
         qty: Joi.number().integer().min(1).max(50).required().label('Jumlah porsi').messages({
           'number.base': qtyMessage,
           'number.integer': qtyMessage,
           'number.min': qtyMessage,
           'number.max': qtyMessage,
         }),
-        option_ids: Joi.array().items(Joi.number().integer().positive()).max(5).default([]).label('Opsi'), // 5 = jumlah option_group
+        option_ids: Joi.array().items(Joi.number().integer().positive().max(2147483647)).max(5).default([]).label('Opsi'), // 5 = jumlah option_group
         note: Joi.string().trim().max(500).allow('').label('Catatan'),
       })
     )
@@ -58,13 +58,13 @@ const publicOrderCreate = Joi.object({
     'any.only': 'Anda harus menyetujui Aturan Pemesanan',
     'any.required': 'Anda harus menyetujui Aturan Pemesanan',
   }),
-  turnstile_token: Joi.string().min(1).required().label('Verifikasi keamanan'),
+  turnstile_token: Joi.string().min(1).max(2048).required().label('Verifikasi keamanan'),
   website: Joi.string().valid('').label('website').messages({ 'any.only': 'Permintaan tidak valid' }), // honeypot
 }).prefs({ errors: { wrap: { label: false } }, messages });
 
 const moobotChat = Joi.object({
   message: Joi.string().trim().min(1).max(500).required().label('Pesan'),
-  turnstile_token: Joi.string().min(1).required().label('Verifikasi keamanan'),
+  turnstile_token: Joi.string().min(1).max(2048).required().label('Verifikasi keamanan'),
 }).prefs({ errors: { wrap: { label: false } }, messages });
 
 module.exports = { phone, publicOrderCreate, moobotChat };
