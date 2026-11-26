@@ -19,8 +19,8 @@ export default function MenuCard({ menu, qty, onAdd, onRemove, photoLeft, photoL
   const lift = state === 'default' ? 'group-hover:-translate-y-1 group-focus-within:-translate-y-1' : ''
   const move = `transition-all duration-200 ease-out ${lift}`
   // Sisi foto per ukuran layar. Kartu tertekan turun 5px (mobile) / 7px (desktop).
-  const photoPos = `${photoLeft ? '-left-1' : '-right-1'} ${photoLeftLg ? 'lg:left-0 lg:right-auto' : 'lg:right-0 lg:left-auto'}`
-  const badgePos = `${photoLeft ? 'left-[113.4px]' : 'right-[113.4px]'} ${photoLeftLg ? 'lg:left-[197.5px] lg:right-auto' : 'lg:right-[197.5px] lg:left-auto'}`
+  const photoPos = `${photoLeft ? '-left-2' : '-right-2'} ${photoLeftLg ? 'lg:-left-3 lg:right-auto' : 'lg:-right-3 lg:left-auto'}`
+  const badgePos = `${photoLeft ? 'left-[100px]' : 'right-[100px]'} ${photoLeftLg ? 'lg:left-[172px] lg:right-auto' : 'lg:right-[172px] lg:left-auto'}`
   const infoPos = `${photoLeft ? 'right-6 items-end text-right' : 'left-6 items-start text-left'} ${
     photoLeftLg ? 'lg:right-14 lg:left-auto lg:items-end lg:text-right' : 'lg:left-14 lg:right-auto lg:items-start lg:text-left'
   }`
@@ -66,7 +66,7 @@ export default function MenuCard({ menu, qty, onAdd, onRemove, photoLeft, photoL
       </div>
 
       <img src={menuPhoto(menu)} onError={fallbackToLocal(menu)} alt={`Foto ${menu.name}`}
-        className={`pointer-events-none absolute size-[146px] object-contain lg:size-[236px] ${move} ${photoPos} ${
+        className={`pointer-events-none absolute size-[154px] object-contain lg:size-[252px] ${move} ${photoPos} ${
           pressed ? 'top-[41px] lg:top-[31px]' : 'top-9 lg:top-6'} ${state === 'habis' ? 'grayscale-[30%]' : ''}`} />
 
       <div className={`pointer-events-none absolute flex size-[52px] items-center justify-center rounded-full font-lilita text-[19px] text-white lg:size-[70px] lg:text-[25px] ${move} ${badgePos} ${s.badge} ${

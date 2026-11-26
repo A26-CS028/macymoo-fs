@@ -9,6 +9,7 @@ import Navbar from '../../components/Navbar'
 import MenuCard from '../../components/MenuCard'
 import Footer from '../../components/Footer'
 import Reviews from '../../components/Reviews'
+import Lengkung from '../../components/Lengkung'
 import MooBotWidget from '../../components/MooBotWidget'
 import heroDesktop from '../../assets/landing/hero-desktop.webp'
 import heroMobile from '../../assets/landing/hero-mobile.webp'
@@ -29,7 +30,7 @@ const teksPutar = (menus) => [
 // Posisi foto di "Sorotan Menu" (Figma). Slot 0 = menu aktif; slot lain foto buram di sekitarnya.
 // box = kotak luar (ukuran setelah diputar), img = ukuran foto sebelum diputar.
 const SLOT_DESKTOP = [
-  { box: 'left-[131.92px] top-[106.97px] h-[416.056px] w-[496.156px]', img: 'h-[370px] w-[460px] rotate-6' },
+  { box: 'left-[70px] top-[44px] h-[500px] w-[596px]', img: 'h-[444px] w-[552px] rotate-6' },
   { box: 'left-[536px] top-[134.62px] h-[200.758px] w-[234.008px]', img: 'h-[170px] w-[210px] -rotate-[9deg] blur-[3.5px]' },
   { box: 'left-[324.14px] -top-[1.51px] h-[135.022px] w-[161.722px]', img: 'h-[120px] w-[150px] -rotate-6 blur-[5px]' },
   { box: '-left-[5.9px] top-[300.43px] h-[200.13px] w-[227.809px]', img: 'h-[165px] w-[200px] rotate-[11deg] blur-[3.5px]' },
@@ -134,9 +135,9 @@ function Hero({ menus }) {
               </div>
             </div>
             {/* Desktop: kanvas 760x552 sesuai Figma, diperkecil di layar < 1440px */}
-            <div className="relative hidden h-[552px] w-[760px] shrink-0 lg:block lg:[zoom:0.5] xl:[zoom:0.8] min-[1440px]:[zoom:1]">
+            <div className="relative hidden h-[552px] w-[760px] shrink-0 lg:-mb-16 lg:block lg:self-end lg:[zoom:0.5] xl:[zoom:0.8] min-[1440px]:[zoom:1]">
               <Sorotan menus={menus} active={active} setActive={setActive} slots={SLOT_DESKTOP} />
-              <div className="absolute left-[566px] top-[340px] flex flex-col gap-1.5">
+              <div className="absolute left-[590px] top-[292px] z-20 flex flex-col gap-1.5">
                 <div key={current.id} className="flex animate-muncul flex-col gap-1.5">
                   <p className="font-lilita text-[38px] leading-[1.15] text-ungu-gelap">{current.name}</p>
                   <p className="text-lg font-extrabold text-ungu">{rupiah(current.price)}</p>
@@ -192,11 +193,15 @@ export default function Landing() {
         <Hero menus={menus} />
         <Reviews />
 
-        <section id="menu" className="relative scroll-mt-4 overflow-hidden bg-kuning px-5 pb-10 pt-6 lg:px-16 lg:pb-[88px] lg:pt-[72px]">
+        <section id="menu" className="relative scroll-mt-4 overflow-hidden bg-kuning px-5 pb-[110px] pt-[72px] lg:px-16 lg:pb-[200px] lg:pt-[150px]">
           <picture>
             <source media="(min-width: 1024px)" srcSet={menuDesktop} />
             <img src={menuMobile} alt="" className="absolute inset-0 size-full object-cover object-top" />
           </picture>
+          <Lengkung warna={['#4d00c9', '#1e054d']} balik cermin className="absolute inset-x-0 top-0 h-[56px] lg:h-[110px]" />
+          {/* Desktop: kuning melebur ke krem bagian Pre-order; HP: menuju footer ungu */}
+          <Lengkung warna={['#fde7a6', '#faf6ee']} className="absolute inset-x-0 bottom-0 hidden h-[130px] lg:block" />
+          <Lengkung warna={['#4d00c9', '#1e054d']} className="absolute inset-x-0 bottom-0 h-[70px] lg:hidden" />
           <div className="relative mx-auto max-w-[1312px]">
             <div className="lg:flex lg:items-end lg:justify-between">
               <h2 className="font-lilita text-[44px] leading-[1.15] text-ungu lg:text-[72px]">Menu hari ini</h2>
@@ -234,7 +239,7 @@ export default function Landing() {
         </section>
 
         {/* Form pre-order desktop (Figma: bagian "Pre-order"); di HP form ada di halaman /pesan */}
-        <section id="pre-order" className="hidden scroll-mt-4 bg-krem px-16 pb-24 pt-20 lg:block" aria-labelledby="judul-preorder">
+        <section id="pre-order" className="hidden scroll-mt-4 bg-krem px-16 pb-24 pt-10 lg:block" aria-labelledby="judul-preorder">
           <div className="mx-auto max-w-[1312px]">
             <div className="mb-7 flex items-end justify-between">
               <h2 id="judul-preorder" className="font-lilita text-[56px] leading-[1.15]">Pre-order</h2>
