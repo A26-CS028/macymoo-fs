@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import { rupiah } from '../utils/format'
+import { uraiTeksBot } from '../utils/teksBot'
 import Modal from './admin/Modal'
 import Turnstile from './Turnstile'
 
@@ -28,6 +29,19 @@ const IKON = {
   kirim: 'M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z',
 }
 
+const Potongan = ({ isi }) => isi.map((p, i) => (p.bold ? <strong key={i} className="font-extrabold">{p.text}</strong> : <span key={i}>{p.text}</span>))
+
+// Jawaban AI: markdown ringan dirender sebagai elemen React (lihat utils/teksBot.js)
+function TeksBot({ text }) {
+  return (
+    <div className="space-y-2 break-words text-sm">
+      {uraiTeksBot(text).map((b, i) => (b.type === 'list'
+        ? <ul key={i} className="list-disc space-y-1 pl-5">{b.items.map((isi, j) => <li key={j}><Potongan isi={isi} /></li>)}</ul>
+        : <p key={i}>{b.lines.map((isi, j) => <span key={j}>{j > 0 && <br />}<Potongan isi={isi} /></span>)}</p>))}
+    </div>
+  )
+}
+
 function Bubble({ m, onFaq }) {
   if (m.from === 'user') {
     return <p className="ml-auto max-w-[264px] whitespace-pre-line break-words rounded-[20px] bg-ungu px-3.5 py-3 text-sm text-white">{m.text}</p>
@@ -49,7 +63,7 @@ function Bubble({ m, onFaq }) {
   }
   return (
     <div className={`max-w-[264px] rounded-[20px] px-3.5 py-3 ${m.from === 'galat' ? 'bg-krem-field' : 'bg-white'}`}>
-      <p className="whitespace-pre-line break-words text-sm">{m.text}</p>
+      {m.from === 'bot' ? <TeksBot text={m.text} /> : <p className="whitespace-pre-line break-words text-sm">{m.text}</p>}
       {m.label && <p className={`mt-1.5 text-[10px] font-bold ${m.from === 'galat' ? 'text-[#dc2626]' : 'text-[#15803d]'}`}>{m.label}</p>}
     </div>
   )
