@@ -15,6 +15,7 @@ import iconPin from '../assets/landing/icon-pin.svg'
 import iconCheck from '../assets/landing/icon-check.svg'
 import iconRadio from '../assets/landing/icon-radio-on.svg'
 import iconArrowGelap from '../assets/landing/icon-arrow-gelap.svg'
+import Button from './ui/Button'
 
 // Form pre-order tanpa login (Figma: bagian "Pre-order" desktop dan "Mobile — Pesananmu").
 // Harga di sini hanya pratinjau; server menghitung ulang dari database.
@@ -174,8 +175,6 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
       <FieldError>{errors.agree_rules}</FieldError>
     </div>
   )
-
-  const submitLabel = sending ? 'Mengirim…' : null
 
   return (
     <form onSubmit={submit} noValidate className="grid gap-5 lg:grid-cols-[520fr_392fr_360fr]">
@@ -347,10 +346,9 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
             <FieldError>{errors.turnstile}</FieldError>
           </div>
           {message && <p role="alert" className="rounded-[10px] bg-[#fde8e8] px-3 py-2 text-sm font-semibold text-[#b91c1c]">{message}</p>}
-          <button type="submit" disabled={sending}
-            className="hidden h-14 items-center justify-center gap-2 rounded-[10px] bg-kuning text-base font-bold text-ungu-gelap disabled:opacity-60 lg:flex">
-            {submitLabel || 'Kirim pre-order'} <img src={iconArrowGelap} alt="" width="12" height="12" />
-          </button>
+          <Button type="submit" varian="kuning" memuat={sending} className="hidden h-14 w-full text-base lg:flex">
+            Kirim pre-order <img src={iconArrowGelap} alt="" width="12" height="12" />
+          </Button>
         </div>
       </aside>
 
@@ -360,10 +358,9 @@ export default function OrderForm({ menus, cart, setCart, onSubmitted }) {
           <p className="text-xs font-semibold text-abu">{antar ? 'Belum termasuk ongkir' : 'Estimasi total'}</p>
           <p className="text-xl font-extrabold" aria-live="polite">{rupiah(subtotal)}</p>
         </div>
-        <button type="submit" disabled={sending}
-          className="flex h-[52px] w-[112px] items-center justify-center gap-2 rounded-[10px] bg-kuning text-[15px] font-bold text-ungu-gelap disabled:opacity-60">
-          {submitLabel || 'Kirim'} <img src={iconArrowGelap} alt="" width="12" height="12" />
-        </button>
+        <Button type="submit" varian="kuning" memuat={sending} className="h-[52px] min-w-[112px]">
+          Kirim <img src={iconArrowGelap} alt="" width="12" height="12" />
+        </Button>
       </div>
     </form>
   )

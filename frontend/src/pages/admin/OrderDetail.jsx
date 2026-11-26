@@ -8,6 +8,7 @@ import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import RescheduleDialog from '../../components/admin/RescheduleDialog'
 import CancelDialog from '../../components/admin/CancelDialog'
 import PaymentForm from '../../components/admin/PaymentForm'
+import { Memuat } from '../../components/ui/Spinner'
 
 // Detail pesanan: alur setelah konfirmasi (KF 5) — Kirim Tagihan, Catat Pembayaran, Terkirim per pengiriman,
 // Selesai, dan Invoice PDF. Figma tidak punya layar ini; disusun dari kartu dan modal dasbor yang sama.
@@ -67,7 +68,7 @@ export default function OrderDetail() {
   }
 
   if (error) return <p role="alert" className="mx-auto max-w-[1180px] rounded-[10px] bg-[#fde8e8] px-4 py-3 text-sm font-semibold text-[#b91c1c]">{error} <Link to="/dapur/pesanan" className="underline">Kembali ke Pesanan Masuk</Link></p>
-  if (!o) return <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat pesanan…</p>
+  if (!o) return <Memuat>Memuat pesanan…</Memuat>
 
   const t = o.totals
   const aktif = ['menunggu_konfirmasi', 'menunggu_pembayaran', 'diproses'].includes(o.status)

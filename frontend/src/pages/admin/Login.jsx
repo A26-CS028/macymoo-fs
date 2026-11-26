@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuth } from '../../hooks/useAuth'
+import Button from '../../components/ui/Button'
 
 const HOME = '/dapur/beranda'
 
@@ -121,13 +122,9 @@ export default function Login() {
             {error && `⚠ ${error}`}
           </p>
 
-          <button
-            type="submit"
-            disabled={loading || locked || !username || !password}
-            className="mt-3 w-full rounded-lg bg-ungu py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? 'Memeriksa…' : 'Masuk'}
-          </button>
+          <Button type="submit" memuat={loading} teksMemuat="Memeriksa…" disabled={locked || !username || !password} className="mt-3 w-full">
+            Masuk
+          </Button>
 
           {locked && (
             <div role="status" className="mt-5 rounded-lg bg-krem-field px-4 py-3 text-sm lg:bg-transparent lg:px-0">

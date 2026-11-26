@@ -3,6 +3,7 @@ import { api } from '../../api/client'
 import { rupiah } from '../../utils/format'
 import { menuPhoto, fallbackToLocal } from '../../utils/menuPhoto'
 import Modal, { ErrorBox, btnSekunder, btnUtama, fieldCls, labelCls } from '../../components/admin/Modal'
+import Toast from '../../components/ui/Toast'
 
 // Kelola Menu & Harga (Figma: Admin — Kelola Menu & Harga / Mobile — Kelola Menu & Harga).
 // Harga dan status Tersedia diubah di kartu lalu disimpan (per kartu atau Simpan Semua); foto langsung tersimpan.
@@ -122,7 +123,7 @@ export default function Menus() {
         </div>
       </div>
 
-      {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
+      {notice && <Toast judul={notice} onClose={() => setNotice('')} />}
       {error && <div className="mt-4"><ErrorBox error={error} /></div>}
       {!menus && !error && <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat menu…</p>}
       {menus?.length === 0 && <p className="mt-5 rounded-[16px] bg-white p-5 text-sm font-semibold">Belum ada menu. Pilih + Tambah menu untuk mulai.</p>}

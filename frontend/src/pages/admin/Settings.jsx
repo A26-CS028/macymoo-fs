@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import { todayJakarta, addDays, labelTanggal } from '../../utils/date'
 import { ErrorBox, fieldCls, labelCls } from '../../components/admin/Modal'
+import Toast from '../../components/ui/Toast'
 
 // Bank, QRIS & Tutup Tanggal (Figma: Admin — Bank, QRIS & Tutup Tanggal / Mobile — Tutup Tanggal & Pembayaran).
 // Rekening, QRIS, dan WhatsApp disimpan sekaligus (PUT /admin/settings mengganti seluruh objek).
@@ -169,7 +170,7 @@ export default function Settings() {
         <button type="submit" disabled={saving || !berubah} className={`${btnUtama} hidden lg:flex`}>{saving ? 'Menyimpan…' : 'Simpan Pengaturan'}</button>
       </div>
 
-      {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
+      {notice && <Toast judul={notice} onClose={() => setNotice('')} />}
       {error && <div className="mt-4"><ErrorBox error={error} /></div>}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[290fr_320fr_480fr] lg:gap-5">

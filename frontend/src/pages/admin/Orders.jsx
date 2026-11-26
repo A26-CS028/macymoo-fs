@@ -6,6 +6,8 @@ import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import RescheduleDialog from '../../components/admin/RescheduleDialog'
 import CancelDialog from '../../components/admin/CancelDialog'
 import PaymentForm from '../../components/admin/PaymentForm'
+import Toast from '../../components/ui/Toast'
+import { Memuat } from '../../components/ui/Spinner'
 
 // Pesanan Masuk (Figma: Admin — Pesanan Masuk / Admin Mobile — Pesanan): daftar, cari, filter status,
 // lalu konfirmasi, jadwalkan ulang, atau batalkan lewat modal.
@@ -82,7 +84,7 @@ export default function Orders() {
         ))}
       </div>
 
-      {notice && <p role="status" className="mt-4 rounded-[10px] bg-ungu-gelap px-4 py-3 text-sm font-bold text-white">✓ {notice}</p>}
+      {notice && <Toast judul={notice} onClose={() => setNotice('')} />}
 
       <div className="mt-4 xl:rounded-[20px] xl:bg-white xl:p-5">
         {error && (
@@ -91,7 +93,7 @@ export default function Orders() {
             <button type="button" onClick={() => load(q.trim())} className="rounded-lg bg-white px-3 py-1 text-ungu-gelap">Coba lagi</button>
           </div>
         )}
-        {!orders && !error && <p role="status" className="py-8 text-center text-sm font-semibold text-abu">Memuat pesanan…</p>}
+        {!orders && !error && <Memuat>Memuat pesanan…</Memuat>}
         {orders && !filtered.length && (
           <p className="py-8 text-center text-sm font-semibold text-abu">{q ? `Tidak ada pesanan yang cocok dengan "${q}".` : 'Belum ada pesanan di sini.'}</p>
         )}
