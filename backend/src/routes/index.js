@@ -23,6 +23,7 @@ router.use('/admin/orders', require('./admin/orders'));
 router.use(require('./public/menus'));
 router.use(require('./public/closedDates'));
 router.use('/admin/kitchen', require('./admin/kitchen'));
+router.use('/admin/recap', require('./admin/recap'));
 router.use('/admin/reviews', require('./admin/reviews'));
 router.use(require('./public/reviews'));
 router.use(require('./public/orderStatus')); // GET /orders/status/:token
