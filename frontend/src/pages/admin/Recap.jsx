@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { api } from '../../api/client'
 import Ikon from '../../components/admin/Ikon'
+import { Memuat } from '../../components/ui/Spinner'
+import { rupiah } from '../../utils/format'
+import { addDays, labelTanggal, todayJakarta } from '../../utils/date'
 
-// Rekap Keuangan (Figma: Admin — Rekap Keuangan / Admin Mobile — Rekap). Menjawab 5 pertanyaan bisnis (DS Q1–Q5).
-// shortcut: endpoint rekap dari tim DS belum ada; tata letak dan tempatnya disiapkan, angka diisi saat GET rekap tersedia.
-const PERIODE = ['Harian', 'Mingguan', 'Bulanan']
-const KARTU = [
-  ['Omzet Bersih', 'Pesanan Dibatalkan tidak dihitung', true],
-  ['Porsi Terjual', 'dibanding periode lalu'],
-  ['Rata-rata per Pesanan', 'pesanan valid'],
-  ['Tingkat Pembatalan', 'termasuk lewat batas bayar'],
-]
+// Rekap Keuangan (Figma: Admin — Rekap Keuangan / Admin Mobile — Rekap). Angka dari GET /admin/recap (RecapRow):
+// omzet = nilai item pesanan diproses dan selesai, tanpa ongkir dan tanpa potongan diskon (aturan DS D01/D02).
+// shortcut: panel DS Q1–Q5 masih tempat kosong karena RecapRow belum memuat porsi, menu, opsi, dan pembayaran per jam.
+const API = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/$/, '')
+const PERIODE = [['Harian', 'daily'], ['Mingguan', 'weekly']] // backend hanya menerima daily dan weekly
+const MAKS_HARI = 366 // sama dengan validators/recap.js
+const jumlah = (rows, k) => rows.reduce((s, r) => s + r[k], 0)
 const MENU = ['Nutrimac', 'Mackster', 'Wraphoria', 'Mac Bites']
 const HARI = ['S', 'S', 'R', 'K', 'J', 'S', 'M']
 
@@ -27,15 +29,51 @@ function Kartu({ q, judul, children, className = '' }) {
     </section>
   )
 }
-const Unduh = ({ className, teks }) => (
-  <button type="button" disabled title="Segera: menunggu rekap dari tim Data Science"
-    className={`flex items-center justify-center gap-2 rounded-[10px] bg-ungu font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 ${className}`}>
-    <Ikon d="unduh" />{teks}
-  </button>
-)
+const Unduh = ({ className, href, children, ...rest }) => href
+  ? <a href={href} className={`flex items-center justify-center gap-2 rounded-[10px] bg-ungu font-bold text-white ${className}`} {...rest}><Ikon d="unduh" />{children}</a>
+  : <span aria-disabled="true" className={`flex items-center justify-center gap-2 rounded-[10px] bg-ungu font-bold text-white opacity-60 ${className}`} {...rest}><Ikon d="unduh" />{children}</span>
 
 export default function Recap() {
-  const [periode, setPeriode] = useState('Mingguan')
+  const [periode, setPeriode] = useState('weekly')
+  const [akhir, setAkhir] = useState(todayJakarta)
+  const [awal, setAwal] = useState(() => addDays(todayJakarta(), -27))
+  const [rekap, setRekap] = useState(null)
+  const [error, setError] = useState('')
+
+  const hari = (Date.parse(akhir) - Date.parse(awal)) / 864e5 + 1
+  const salahRentang = !awal || !akhir ? 'Pilih tanggal awal dan akhir'
+    : hari < 1 ? 'Tanggal akhir tidak boleh sebelum tanggal awal'
+      : hari > MAKS_HARI ? `Rentang maksimal ${MAKS_HARI} hari` : ''
+  const query = `from=${awal}&to=${akhir}&period=${periode}`
+
+  useEffect(() => {
+    if (salahRentang) return
+    let batal = false // abaikan jawaban lama bila filter sudah berubah
+    setRekap(null); setError('')
+    api(`/admin/recap?${query}`).then((r) => { if (!batal) setRekap(r) }).catch((e) => { if (!batal) setError(e.message) })
+    return () => { batal = true }
+  }, [query, salahRentang])
+
+  const rows = rekap?.rows || []
+  const omzet = jumlah(rows, 'subtotal')
+  const pesanan = jumlah(rows, 'orders_count')
+  const kartu = rekap && [
+    ['Omzet', rupiah(omzet), `Ongkir ${rupiah(jumlah(rows, 'shipping_total'))} tidak termasuk`, true],
+    ['Pesanan', pesanan, 'Diproses dan Selesai'],
+    ['Rata-rata per Pesanan', pesanan ? rupiah(Math.round(omzet / pesanan)) : '—', 'omzet ÷ pesanan'],
+    ['Tagihan Belum Terbayar', rupiah(jumlah(rows, 'outstanding')), `Dibayar bersih ${rupiah(jumlah(rows, 'paid_net'))}`],
+  ]
+  const tertinggi = Math.max(1, ...rows.map((r) => r.subtotal))
+  const tglBulan = (ymd) => labelTanggal(ymd).panjang.split(', ')[1] // "7 Nov"
+  // Minggu pertama/terakhir bisa terpotong filter: tampilkan tanggal yang benar-benar dihitung, bukan Senin/Minggu penuh
+  const labelPeriode = (r) => periode === 'weekly'
+    ? `${tglBulan(r.period_start < rekap.from ? rekap.from : r.period_start)} – ${tglBulan(r.period_end > rekap.to ? rekap.to : r.period_end)}`
+    : labelTanggal(r.period_start).panjang
+  const unduh = salahRentang ? {} : { href: `${API}/admin/recap/export.xlsx?${query}`, download: true }
+  const tab = (cls, aktif) => PERIODE.map(([label, v]) => (
+    <button key={v} type="button" role="tab" aria-selected={periode === v} onClick={() => setPeriode(v)}
+      className={`${cls} ${periode === v ? aktif : 'text-abu hover:text-ungu-gelap'}`}>{label}</button>
+  ))
 
   return (
     <div className="mx-auto max-w-[1180px] pb-6">
@@ -46,36 +84,63 @@ export default function Recap() {
         </div>
         <div className="flex items-center gap-5">
           <div role="tablist" aria-label="Periode" className="hidden gap-5 text-sm font-semibold lg:flex">
-            {PERIODE.map((p) => (
-              <button key={p} type="button" role="tab" aria-selected={periode === p} onClick={() => setPeriode(p)}
-                className={`pb-1 ${periode === p ? 'border-b-2 border-ungu font-bold text-ungu-gelap' : 'text-abu hover:text-ungu-gelap'}`}>{p}</button>
-            ))}
+            {tab('pb-1', 'border-b-2 border-ungu font-bold text-ungu-gelap')}
           </div>
-          <Unduh className="hidden h-12 px-5 text-[15px] lg:flex" teks="Unduh Excel" />
-          <button type="button" disabled aria-label="Unduh Excel (segera)" className="flex size-12 items-center justify-center rounded-[12px] bg-ungu text-white opacity-60 lg:hidden"><Ikon d="unduh" /></button>
+          <Unduh className="hidden h-12 px-5 text-[15px] lg:flex" {...unduh}>Unduh Excel</Unduh>
+          <Unduh className="size-12 rounded-[12px] lg:hidden" aria-label="Unduh Excel (tanpa data pribadi)" {...unduh} />
         </div>
       </div>
-      <div role="tablist" aria-label="Periode" className="mt-4 grid grid-cols-3 text-center text-[15px] font-semibold lg:hidden">
-        {PERIODE.map((p) => (
-          <button key={p} type="button" role="tab" aria-selected={periode === p} onClick={() => setPeriode(p)}
-            className={`pb-2 ${periode === p ? 'font-bold after:mx-auto after:mt-2 after:block after:h-1 after:w-8 after:rounded-full after:bg-ungu' : 'text-abu'}`}>{p}</button>
-        ))}
+      <div role="tablist" aria-label="Periode" className="mt-4 grid grid-cols-2 text-center text-[15px] font-semibold lg:hidden">
+        {tab('pb-2', 'font-bold text-ungu-gelap after:mx-auto after:mt-2 after:block after:h-1 after:w-8 after:rounded-full after:bg-ungu')}
       </div>
 
-      <p role="status" className="mt-4 flex items-start gap-2.5 rounded-[14px] bg-kuning px-4 py-3 text-sm font-bold">
-        <Ikon d="M12 11v5M12 8h.01M12 21a9 9 0 100-18 9 9 0 000 18z" className="mt-px size-5 shrink-0" />
-        Rekap {periode.toLowerCase()} sedang disiapkan tim Data Science. Tempatnya sudah siap; angka muncul otomatis setelah data rekap tersedia.
-      </p>
+      <div className="mt-4 flex flex-wrap items-end gap-3 text-sm font-semibold">
+        <label className="flex flex-col gap-1">Tanggal kirim dari
+          <input type="date" value={awal} max={akhir} onChange={(e) => setAwal(e.target.value)} className="rounded-[10px] bg-white px-3 py-2 font-medium" />
+        </label>
+        <label className="flex flex-col gap-1">sampai
+          <input type="date" value={akhir} min={awal} onChange={(e) => setAkhir(e.target.value)} className="rounded-[10px] bg-white px-3 py-2 font-medium" />
+        </label>
+      </div>
+      {(salahRentang || error) && <p role="alert" className="mt-3 rounded-[14px] bg-kuning px-4 py-3 text-sm font-bold">{salahRentang || error}</p>}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:mt-5 lg:grid-cols-4 lg:gap-5">
-        {KARTU.map(([judul, sub, utama], i) => (
-          <div key={judul} className={`flex flex-col rounded-[20px] p-4 lg:p-5 ${utama ? 'col-span-2 bg-ungu text-white lg:col-span-1' : 'bg-white'} ${i === 3 ? '' : ''}`}>
-            <span className="flex items-start justify-between gap-2 text-[13px] font-semibold lg:text-sm">{judul}<Ikon d="panah" className="size-4" /></span>
-            <span className="mt-1 text-[34px] font-extrabold leading-tight lg:text-[44px]" aria-label="belum ada data">—</span>
-            <span className={`text-xs font-semibold ${utama ? 'text-kuning' : 'text-abu'}`}>{sub}</span>
+      {!rekap && !salahRentang && !error && <Memuat>Memuat rekap…</Memuat>}
+      {kartu && !salahRentang && (
+        <>
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:mt-5 lg:grid-cols-4 lg:gap-5">
+            {kartu.map(([judul, nilai, sub, utama]) => (
+              <div key={judul} className={`flex flex-col rounded-[20px] p-4 lg:p-5 ${utama ? 'col-span-2 bg-ungu text-white lg:col-span-1' : 'bg-white'}`}>
+                <span className="text-[13px] font-semibold lg:text-sm">{judul}</span>
+                <span className="mt-1 whitespace-nowrap text-[20px] font-extrabold leading-tight lg:text-[26px]">{nilai}</span>
+                <span className={`text-xs font-semibold ${utama ? 'text-kuning' : 'text-abu'}`}>{sub}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          <Kartu judul={`Omzet ${periode === 'weekly' ? 'per minggu (Senin–Minggu)' : 'per hari'}`} className="mt-4 lg:mt-5">
+            <p className="text-[13px] font-medium text-abu">Menurut tanggal kirim. Tanpa ongkir, diskon tidak dikurangi.</p>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full whitespace-nowrap text-left text-sm">
+                <thead className="text-xs text-abu">
+                  <tr><th className="py-2 font-semibold">{periode === 'weekly' ? 'Minggu' : 'Tanggal'}</th><th className="hidden w-2/5 font-semibold sm:table-cell"><span className="sr-only">Grafik</span></th>
+                    <th className="text-right font-semibold">Omzet</th><th className="hidden text-right font-semibold sm:table-cell">Ongkir</th><th className="text-right font-semibold">Pesanan</th></tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.period_start} className="border-t border-abu-label/30">
+                      <td className="whitespace-nowrap py-2 font-semibold">{labelPeriode(r)}</td>
+                      <td className="hidden px-3 sm:table-cell"><span className="block h-2.5 rounded-full bg-ungu" style={{ width: `${(r.subtotal / tertinggi) * 100}%` }} /></td>
+                      <td className="text-right font-bold">{rupiah(r.subtotal)}</td>
+                      <td className="hidden pl-3 text-right text-abu sm:table-cell">{rupiah(r.shipping_total)}</td>
+                      <td className="pl-3 text-right">{r.orders_count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Kartu>
+        </>
+      )}
 
       <div className="mt-4 grid gap-4 lg:mt-5 lg:grid-cols-3 lg:gap-5">
         <Kartu q="DS Q1" judul="Menu apa yang paling laris?">
@@ -127,7 +192,7 @@ export default function Recap() {
         </Kartu>
       </div>
 
-      <Unduh className="mt-4 h-14 w-full text-[15px] lg:hidden" teks="Unduh Excel (tanpa data pribadi) · segera" />
+      <Unduh className="mt-4 h-14 w-full text-[15px] lg:hidden" {...unduh}>Unduh Excel (tanpa data pribadi)</Unduh>
     </div>
   )
 }
