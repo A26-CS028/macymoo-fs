@@ -30,13 +30,21 @@ async function loadRecap({ from, to, period }) {
         GROUP BY 1 ORDER BY 1`,
       [from, to]
     ),
-    // per pesanan; view memuat semua status selain yang disaring di sini
+    // per pesanan; view memuat semua status selain dibatalkan.
+    // orders_count, discount_total, paid_net: hanya diproses + selesai (D01/D02).
+    // outstanding (DS Q4): tagihan yang sudah dikirim (orders.invoice_sent_at terisi) tapi
+    // belum dibayar; ikut menunggu_pembayaran (bayar di muka yang belum dibayar).
     pool.query(
       `SELECT ${bucket('first_delivery_date')}::text AS period_start,
-              COUNT(*) AS orders_count, SUM(discount_total) AS discount_total,
-              SUM(paid_net) AS paid_net, SUM(outstanding) AS outstanding
+              COUNT(*) FILTER (WHERE status IN ('diproses', 'selesai')) AS orders_count,
+              COALESCE(SUM(discount_total) FILTER (WHERE status IN ('diproses', 'selesai')), 0) AS discount_total,
+              COALESCE(SUM(paid_net) FILTER (WHERE status IN ('diproses', 'selesai')), 0) AS paid_net,
+              COALESCE(SUM(outstanding) FILTER (
+                WHERE order_id IN (SELECT id FROM orders WHERE invoice_sent_at IS NOT NULL)
+              ), 0) AS outstanding
          FROM recap_orders
-        WHERE status IN ('diproses', 'selesai') AND first_delivery_date BETWEEN $1 AND $2
+        WHERE status IN ('diproses', 'selesai', 'menunggu_pembayaran')
+          AND first_delivery_date BETWEEN $1 AND $2
         GROUP BY 1 ORDER BY 1`,
       [from, to]
     ),
