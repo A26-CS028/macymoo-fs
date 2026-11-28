@@ -30,11 +30,15 @@ async function loadRecap({ from, to, period }) {
         GROUP BY 1 ORDER BY 1`,
       [from, to]
     ),
-    // per pesanan; view memuat semua status selain yang disaring di sini
+    // per pesanan; view memuat semua status selain yang disaring di sini.
+    // outstanding hanya untuk pesanan yang tagihannya sudah dikirim (orders.invoice_sent_at
+    // tidak kosong), sesuai definisi DS Q4. Kolom lain tidak terpengaruh.
     pool.query(
       `SELECT ${bucket('first_delivery_date')}::text AS period_start,
               COUNT(*) AS orders_count, SUM(discount_total) AS discount_total,
-              SUM(paid_net) AS paid_net, SUM(outstanding) AS outstanding
+              SUM(paid_net) AS paid_net,
+              SUM(CASE WHEN order_id IN (SELECT id FROM orders WHERE invoice_sent_at IS NOT NULL)
+                       THEN outstanding ELSE 0 END) AS outstanding
          FROM recap_orders
         WHERE status IN ('diproses', 'selesai') AND first_delivery_date BETWEEN $1 AND $2
         GROUP BY 1 ORDER BY 1`,

@@ -2686,7 +2686,11 @@ components:
         outstanding:
           allOf:
             - $ref: '#/components/schemas/Rupiah'
-          description: Tagihan belum terbayar.
+          description: |
+            Tagihan belum terbayar (DS Q4): sisa tagihan (grand_total - paid_net, minimal 0)
+            pesanan `diproses` dan `selesai` yang tagihannya sudah dikirim
+            (`orders.invoice_sent_at` tidak kosong). Pesanan yang tagihannya belum dikirim
+            tidak dihitung.
 
     # ---- Internal FastAPI -------------------------------------------------
     MooLabelPredictRequest:
