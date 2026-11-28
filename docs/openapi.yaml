@@ -1443,8 +1443,11 @@ paths:
       tags: [Admin - Tambahan]
       summary: Rekap keuangan harian atau mingguan
       description: |
-        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Hanya pesanan `diproses` dan `selesai`;
-        filter status dipasang di query karena `recap_orders` juga memuat `menunggu_*`.
+        Tanpa nama, HP, atau alamat (dibaca dari view rekap). Omzet, ongkir, jumlah pesanan, diskon,
+        dan pembayaran hanya dari pesanan `diproses` dan `selesai`; filter status dipasang di query
+        karena `recap_orders` juga memuat `menunggu_*`. Pengecualian: `outstanding` (tagihan belum
+        terbayar, DS Q4) juga memuat pesanan `menunggu_pembayaran` yang tagihannya sudah dikirim
+        (`invoice_sent_at` terisi).
         Omzet dan ongkir per pengiriman dari `recap_deliveries` (dikelompokkan per `delivery_date`, D02);
         diskon, pembayaran, dan sisa tagihan per pesanan dari `recap_orders`.
         **[Usulan Rama, menunggu persetujuan Daffa]** kolom per pesanan dikelompokkan menurut
@@ -2656,7 +2659,8 @@ components:
         Pilihan (b), aturan DS D01/D02 (disepakati di FS #38). `subtotal` dan `shipping_total`
         per pengiriman dari view `recap_deliveries`, dikelompokkan menurut `delivery_date`
         (Senin-Minggu). `orders_count`, `discount_total`, `paid_net`, dan `outstanding` per pesanan
-        dari view `recap_orders`. Keduanya hanya pesanan `diproses` dan `selesai`.
+        dari view `recap_orders`. Semua kolom hanya memuat pesanan `diproses` dan `selesai`,
+        kecuali `outstanding` yang juga memuat `menunggu_pembayaran` (lihat deskripsi kolomnya).
         Tidak ada `grand_total`: angka itu menggabungkan dua sumber dengan dasar periode berbeda.
       required: [period_start, period_end, orders_count, subtotal, shipping_total, discount_total, paid_net, outstanding]
       properties:
@@ -2688,9 +2692,8 @@ components:
             - $ref: '#/components/schemas/Rupiah'
           description: |
             Tagihan belum terbayar (DS Q4): sisa tagihan (grand_total - paid_net, minimal 0)
-            pesanan `diproses` dan `selesai` yang tagihannya sudah dikirim
-            (`orders.invoice_sent_at` tidak kosong). Pesanan yang tagihannya belum dikirim
-            tidak dihitung.
+            pesanan `diproses`, `selesai`, dan `menunggu_pembayaran` yang tagihannya sudah dikirim
+            (`orders.invoice_sent_at` tidak kosong). Tagihan yang belum dikirim tidak dihitung.
 
     # ---- Internal FastAPI -------------------------------------------------
     MooLabelPredictRequest:
